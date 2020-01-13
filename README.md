@@ -2,6 +2,10 @@
 
 This package supports marshalling a golang struct into SOQL. Like `json` tags, this package provides `soql` tags that you can use to annotate your golang structs. Once tagged `Marshal` method will return SOQL query that will let you query the required Salesforce object using Salesforce API.
 
+## Introduction
+
+Please refer to [introduction](./docs/introduction.md) to understand the basics. Once you read through it you can refer to documentation below that covers features of this repo in more depth.
+
 ## How to use
 
 Start with using `soql` tags on members of your golang structs. `soql` is the main tag. There are following subtags supported:
