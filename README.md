@@ -36,7 +36,7 @@ Lets take a look at one example of a simple non-nested struct and how it can be 
 ```
 type TestSoqlStruct struct {
 	SelectClause NonNestedStruct   `soql:"selectClause,tableName=SM_SomeObject__c"`
-    WhereClause  TestQueryCriteria `soql:"whereClause"`
+	WhereClause  TestQueryCriteria `soql:"whereClause"`
 }
 type TestQueryCriteria struct {
 	IncludeNamePattern          []string `soql:"likeOperator,fieldName=Name__c"`
