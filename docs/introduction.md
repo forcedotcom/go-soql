@@ -1,6 +1,6 @@
 # Introduction
 
-If you are a Golang developer intending to write client for interacting with Salesforce, this post is for you. Learn how you can annotate your Golang structs to generate SOQL queries to be used in Salesforce APIs and how this will make it easy for you to write Golang client for Salesforce.
+If you are a Golang developer intending to write client for interacting with Salesforce, this doc is for you. Learn how you can annotate your Golang structs to generate SOQL queries to be used in Salesforce APIs and how this will make it easy for you to write Golang client for Salesforce.
 
 Salesforce has REST [API](https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/intro_rest_resources.htm) that allows any third party to integrate with it using their language of choice. One of the APIs (/services/data/<version>/query) allows developers to query Salesforce object using [SOQL](https://developer.salesforce.com/docs/atlas.en-us.soql_sosl.meta/soql_sosl/sforce_api_calls_soql_sosl_intro.htm) query. SOQL is very powerful, SQL like query language that allows developers to query Salesforce objects. It has extensive support for conditional expression to filter the objects being retrieved as well as very powerful way of performing join operations using relationship queries.
 
@@ -135,4 +135,4 @@ if err != nil {
 
 As you can note above using this writing Golang client for Salesforce can now be much more easy affair with new soql tag library. All you need to do is define the struct and annotate it.
 
-Hopefully now you have a feel of what go-soql library can do for you. However, this blog post just scratches the surface of what go-sosql library can do. It has very extensive support for logical operators as well as child to parent and parent to child relationships. More details on how to use that can be found out in README of the repo.
+Hopefully now you have a feel of what go-soql library can do for you. However, this doc just scratches the surface of what go-sosql library can do. It has very extensive support for logical operators as well as child to parent and parent to child relationships. More details on how to use that can be found out in README of the repo.
