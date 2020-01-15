@@ -26,10 +26,12 @@ Start with using `soql` tags on members of your golang structs. `soql` is the ma
 Following are supported parameters:
 
 ```
-    fieldName // is the parameter to be used to specify the name of the field in underlying Salesforce object. It should be used with all tags listed above other than selectClause, whereClause and selectChild.
-    tableName // is the parameter to be used to specify the name of the table of underlying Salesforce Object. It shouldbe be used only with selectClause
+    fieldName // is the parameter to be used to specify the name of the field in underlying Salesforce object. It can be used with all tags listed above other than selectClause and whereClause.
+    tableName // is the parameter to be used to specify the name of the table of underlying Salesforce Object. It can be be used only with selectClause.
 
 ```
+
+If `fieldName` and `tableName` parameters are not provided then the name of the field will be used as default.
 
 Lets take a look at one example of a simple non-nested struct and how it can be used to construct a soql query:
 

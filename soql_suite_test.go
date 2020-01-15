@@ -70,6 +70,14 @@ type ParentStruct struct {
 	SomeNonSoqlMember string          `json:"some_nonsoql_member"`
 }
 
+type DefaultFieldNameParentStruct struct {
+	ID                string          `soql:"selectColumn,fieldName=Id"`
+	Name              string          `soql:"selectColumn,fieldName=Name__c"`
+	NonNestedStruct   NonNestedStruct `soql:"selectColumn,fieldName=NonNestedStruct__r"`
+	ChildStruct       TestChildStruct `soql:"selectChild"`
+	SomeNonSoqlMember string          `json:"some_nonsoql_member"`
+}
+
 type InvalidTestChildStruct struct {
 	WhereClause ChildQueryCriteria `soql:"whereClause"`
 }
@@ -114,4 +122,19 @@ type InvalidTagInStruct struct {
 	SelectClause  NestedStruct       `soql:"selectClause,tableName=SM_Logical_Host__c"`
 	WhereClause   ChildQueryCriteria `soql:"whereClause"`
 	AnotherMember NestedStruct       `soql:"invalidClause,tableName=SM_Logical_Host__c"`
+}
+
+type DefaultFieldNameStruct struct {
+	DefaultName string `soql:"selectColumn"`
+	Description string `soql:"selectColumn,fieldName=Description__c"`
+}
+
+type DefaultTableNameStruct struct {
+	SomeTableName NestedStruct      `soql:"selectClause"`
+	WhereClause   TestQueryCriteria `soql:"whereClause"`
+}
+
+type DefaultFieldNameQueryCriteria struct {
+	IncludeNamePattern []string `soql:"likeOperator,fieldName=Host_Name__c"`
+	Role               []string `soql:"inOperator"`
 }

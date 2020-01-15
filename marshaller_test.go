@@ -177,7 +177,7 @@ var _ = Describe("Marshaller", func() {
 				})
 			})
 
-			Context("when likeClause and inClause are populated", func() {
+			Context("when likeOperator and inClause are populated", func() {
 				BeforeEach(func() {
 					critetria = TestQueryCriteria{
 						IncludeNamePattern: []string{"-db", "-dbmgmt"},
@@ -192,7 +192,7 @@ var _ = Describe("Marshaller", func() {
 				})
 			})
 
-			Context("when likeClause and equalsClause are populated", func() {
+			Context("when likeOperator and equalsClause are populated", func() {
 				BeforeEach(func() {
 					critetria = TestQueryCriteria{
 						IncludeNamePattern: []string{"-db", "-dbmgmt"},
@@ -202,12 +202,12 @@ var _ = Describe("Marshaller", func() {
 					expectedClause = "(Host_Name__c LIKE '%-db%' OR Host_Name__c LIKE '%-dbmgmt%') AND Tech_Asset__r.Asset_Type_Asset_Type__c = 'SERVER'"
 				})
 
-				It("returns properly formed clause for likeClause and inClause joined by AND clause", func() {
+				It("returns properly formed clause for likeOperator and inClause joined by AND clause", func() {
 					Expect(clause).To(Equal(expectedClause))
 				})
 			})
 
-			Context("when both likeClause and notLikeClause are populated", func() {
+			Context("when both likeOperator and notlikeOperator are populated", func() {
 				BeforeEach(func() {
 					critetria = TestQueryCriteria{
 						IncludeNamePattern: []string{"-db", "-dbmgmt"},
@@ -217,7 +217,7 @@ var _ = Describe("Marshaller", func() {
 					expectedClause = "(Host_Name__c LIKE '%-db%' OR Host_Name__c LIKE '%-dbmgmt%') AND ((NOT Host_Name__c LIKE '%-core%') AND (NOT Host_Name__c LIKE '%-drp%'))"
 				})
 
-				It("returns properly formed clause for likeClause and notLikeClause joined by AND clause", func() {
+				It("returns properly formed clause for likeOperator and notlikeOperator joined by AND clause", func() {
 					Expect(clause).To(Equal(expectedClause))
 				})
 			})
@@ -238,40 +238,6 @@ var _ = Describe("Marshaller", func() {
 
 				It("returns properly formed clause joined by AND clause", func() {
 					Expect(clause).To(Equal(expectedClause))
-				})
-			})
-
-			Context("when struct has invalid tag key", func() {
-				type InvalidCriteriaStruct struct {
-					SomePattern      []string `soql:"likeClause,fieldName=Some_Pattern__c"`
-					SomeOtherPattern string   `soql:"invalidClause,fieldName=Some_Other_Field"`
-				}
-
-				It("returns ErrInvalidTag error", func() {
-					str, err := MarshalWhereClause(InvalidCriteriaStruct{})
-					Expect(err).To(Equal(ErrInvalidTag))
-					Expect(str).To(BeEmpty())
-				})
-			})
-
-			Context("when struct has missing fieldName", func() {
-				type MissingFieldName struct {
-					SomePattern      []string `soql:"likeClause,fieldName=Some_Pattern__c"`
-					SomeOtherPattern string   `soql:"equalsClause"`
-				}
-
-				It("returns ErrInvalidTag error", func() {
-					str, err := MarshalWhereClause(MissingFieldName{})
-					Expect(err).To(Equal(ErrInvalidTag))
-					Expect(str).To(BeEmpty())
-				})
-			})
-
-			Context("when struct has invalid types", func() {
-				It("returns empty string", func() {
-					str, err := MarshalWhereClause(QueryCriteriaWithInvalidTypes{})
-					Expect(err).ToNot(HaveOccurred())
-					Expect(str).To(BeEmpty())
 				})
 			})
 		})
@@ -319,6 +285,62 @@ var _ = Describe("Marshaller", func() {
 				})
 			})
 		})
+
+		Context("when no fieldName parameter is specified in tag", func() {
+			var defaultFieldNameCriteria DefaultFieldNameQueryCriteria
+			BeforeEach(func() {
+				defaultFieldNameCriteria = DefaultFieldNameQueryCriteria{
+					IncludeNamePattern: []string{"-db", "-dbmgmt"},
+					Role:               []string{"foo", "bar"},
+				}
+				expectedClause = "(Host_Name__c LIKE '%-db%' OR Host_Name__c LIKE '%-dbmgmt%') AND Role IN ('foo','bar')"
+			})
+
+			It("returns properly formed clause joined by AND clause", func() {
+				clause, err = MarshalWhereClause(defaultFieldNameCriteria)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(clause).To(Equal(expectedClause))
+			})
+		})
+
+		Context("when tag is invalid", func() {
+			Context("when struct has invalid tag key", func() {
+				type InvalidCriteriaStruct struct {
+					SomePattern      []string `soql:"likeOperator,fieldName=Some_Pattern__c"`
+					SomeOtherPattern string   `soql:"invalidClause,fieldName=Some_Other_Field"`
+				}
+
+				It("returns ErrInvalidTag error", func() {
+					str, err := MarshalWhereClause(InvalidCriteriaStruct{})
+					Expect(err).To(Equal(ErrInvalidTag))
+					Expect(str).To(BeEmpty())
+				})
+			})
+
+			Context("when struct has missing fieldName", func() {
+				type MissingFieldName struct {
+					SomePattern      []string `soql:"likeOperator,fieldName=Some_Pattern__c"`
+					SomeOtherPattern string   `soql:"equalsOperator,fieldName="`
+				}
+
+				It("returns ErrInvalidTag error", func() {
+					str, err := MarshalWhereClause(MissingFieldName{
+						SomePattern:      []string{"test"},
+						SomeOtherPattern: "foo",
+					})
+					Expect(err).To(Equal(ErrInvalidTag))
+					Expect(str).To(BeEmpty())
+				})
+			})
+
+			Context("when struct has invalid types", func() {
+				It("returns empty string", func() {
+					str, err := MarshalWhereClause(QueryCriteriaWithInvalidTypes{})
+					Expect(err).ToNot(HaveOccurred())
+					Expect(str).To(BeEmpty())
+				})
+			})
+		})
 	})
 
 	Describe("MarshalSelectClause", func() {
@@ -329,6 +351,14 @@ var _ = Describe("Marshaller", func() {
 						str, err := MarshalSelectClause(NonNestedStruct{}, "")
 						Expect(err).ToNot(HaveOccurred())
 						Expect(str).To(Equal("Name,SomeValue__c"))
+					})
+				})
+
+				Context("when no fieldName parameter is specified in tag", func() {
+					It("returns propery resolved list of field names by using defaults", func() {
+						str, err := MarshalSelectClause(DefaultFieldNameStruct{}, "")
+						Expect(err).ToNot(HaveOccurred())
+						Expect(str).To(Equal("DefaultName,Description__c"))
 					})
 				})
 
@@ -367,7 +397,7 @@ var _ = Describe("Marshaller", func() {
 			Context("when struct has missing fieldName", func() {
 				type MissingFieldName struct {
 					SomePattern      []string `soql:"selectColumn,fieldName=Some_Pattern__c"`
-					SomeOtherPattern string   `soql:"selectColumn"`
+					SomeOtherPattern string   `soql:"selectColumn,fieldName="`
 				}
 
 				It("returns ErrInvalidTag error", func() {
@@ -397,6 +427,20 @@ var _ = Describe("Marshaller", func() {
 						}, "")
 						Expect(err).ToNot(HaveOccurred())
 						Expect(str).To(Equal("Id,Name__c,NonNestedStruct__r.Name,NonNestedStruct__r.SomeValue__c,(SELECT SM_Application_Versions__c.Version__c FROM Application_Versions__r WHERE SM_Application_Versions__c.Name__c = 'sfdc-release')"))
+					})
+				})
+
+				Context("when selectChild tag does not have fieldName parameter", func() {
+					It("returns properly constructed select clause", func() {
+						str, err := MarshalSelectClause(DefaultFieldNameParentStruct{
+							ChildStruct: TestChildStruct{
+								WhereClause: ChildQueryCriteria{
+									Name: "sfdc-release",
+								},
+							},
+						}, "")
+						Expect(err).ToNot(HaveOccurred())
+						Expect(str).To(Equal("Id,Name__c,NonNestedStruct__r.Name,NonNestedStruct__r.SomeValue__c,(SELECT SM_Application_Versions__c.Version__c FROM ChildStruct WHERE SM_Application_Versions__c.Name__c = 'sfdc-release')"))
 					})
 				})
 
@@ -577,6 +621,24 @@ var _ = Describe("Marshaller", func() {
 
 			It("returns error", func() {
 				Expect(err).To(Equal(ErrInvalidTag))
+			})
+		})
+
+		Context("when no table name is specified for selectClause", func() {
+			BeforeEach(func() {
+				soqlStruct = DefaultTableNameStruct{
+					SomeTableName: NestedStruct{},
+					WhereClause: TestQueryCriteria{
+						IncludeNamePattern: []string{"-db", "-dbmgmt"},
+						Roles:              []string{"db", "dbmgmt"},
+					},
+				}
+				expectedQuery = "SELECT Id,Name__c,NonNestedStruct__r.Name,NonNestedStruct__r.SomeValue__c FROM SomeTableName WHERE (Host_Name__c LIKE '%-db%' OR Host_Name__c LIKE '%-dbmgmt%') AND Role__r.Name IN ('db','dbmgmt')"
+			})
+
+			It("uses name of the field as table name and returns properly constructed soql query", func() {
+				Expect(err).ToNot(HaveOccurred())
+				Expect(actualQuery).To(Equal(expectedQuery))
 			})
 		})
 	})

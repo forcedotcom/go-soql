@@ -221,7 +221,7 @@ func marshalWhereClause(v interface{}, tableName string) (string, error) {
 		fieldType := reflectedType.Field(i)
 		clauseTag := fieldType.Tag.Get(SoqlTag)
 		clauseKey := getClauseKey(clauseTag)
-		fieldName := getFieldName(clauseTag)
+		fieldName := getFieldName(clauseTag, fieldType.Name)
 		if fieldName == "" {
 			return "", ErrInvalidTag
 		}
@@ -287,9 +287,9 @@ func getClauseKey(clauseTag string) string {
 	return tagItems[0]
 }
 
-func getTagValue(clauseTag, key string) string {
+func getTagValue(clauseTag, key, defaultValue string) string {
 	tagItems := strings.Split(clauseTag, ",")
-	value := ""
+	value := defaultValue
 	for _, tagItem := range tagItems {
 		indx := strings.Index(tagItem, "=")
 		if indx == -1 {
@@ -302,12 +302,12 @@ func getTagValue(clauseTag, key string) string {
 	return value
 }
 
-func getFieldName(clauseTag string) string {
-	return getTagValue(clauseTag, FieldName)
+func getFieldName(clauseTag, defaultFieldName string) string {
+	return getTagValue(clauseTag, FieldName, defaultFieldName)
 }
 
-func getTableName(clauseTag string) string {
-	return getTagValue(clauseTag, TableName)
+func getTableName(clauseTag, defaultTableName string) string {
+	return getTagValue(clauseTag, TableName, defaultTableName)
 }
 
 // MarshalSelectClause returns fields to be included in select clause. Child to parent and parent to child
@@ -397,7 +397,7 @@ func MarshalSelectClause(v interface{}, relationShipName string) (string, error)
 			default:
 				return "", ErrInvalidTag
 			}
-			fieldName := getFieldName(clauseTag)
+			fieldName := getFieldName(clauseTag, field.Name)
 			if fieldName == "" {
 				return "", ErrInvalidTag
 			}
@@ -454,7 +454,7 @@ func marshal(reflectedValue reflect.Value, reflectedType reflect.Type, childRela
 					return "", ErrMultipleSelectClause
 				}
 				selectClausePresent = true
-				tableName = getTableName(clauseTag)
+				tableName = getTableName(clauseTag, field.Name)
 				var relationName string
 				if childRelationName == "" {
 					relationName = ""
