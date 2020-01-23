@@ -21,6 +21,10 @@ Start with using `soql` tags on members of your golang structs. `soql` is the ma
     equalsOperator // is the tag to be used for "=" operator in where clause. It should be used on members of struct that have been tagged with whereClause.
     notEqualsOperator // is the tag to be used for "!=" operator in where clause. It should be used on members of struct that have been tagged with whereClause.
     nullOperator // is the tag to be used for " = null " or "!= null" operator in where clause. It should be used on members of struct that have been tagged with whereClause.
+    greaterThanOperator // is the tag to be used for ">" operator in where clause. It should be used on members of struct that have been tagged with whereClause.
+    lessThanOperator // is the tag to be used for "<" operator in where clause. It should be used on members of struct that have been tagged with whereClause.
+    greaterThanOrEqualsToOperator // is the tag to be used for ">=" operator in where clause. It should be used on members of struct that have been tagged with whereClause.
+    lessThanOrEqualsToOperator // is the tag to be used for "<=" operator in where clause. It should be used on members of struct that have been tagged with whereClause.
 ```
 
 Following are supported parameters:

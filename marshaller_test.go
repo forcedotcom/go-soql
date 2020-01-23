@@ -7,6 +7,8 @@
 package soql_test
 
 import (
+	"time"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -283,6 +285,123 @@ var _ = Describe("Marshaller", func() {
 				It("returns properly formed clause joined by AND clause", func() {
 					Expect(clause).To(Equal(expectedClause))
 				})
+			})
+		})
+
+		Context("when all clauses are signed integer data types", func() {
+			var criteria QueryCriteriaWithIntegerTypes
+			BeforeEach(func() {
+				criteria = QueryCriteriaWithIntegerTypes{
+					NumOfCPUCores:                    16,
+					PhysicalCPUCount:                 4,
+					NumOfSuccessivePuppetRunFailures: -1,
+					NumOfCoolanLogFiles:              1024,
+					PvtTestFailCount:                 9223372036854775807,
+				}
+
+				expectedClause = "Num_of_CPU_Cores__c = 16 AND Physical_CPU_Count__c = 4 AND Number_Of_Successive_Puppet_Run_Failures__c = -1 AND Num_Of_Coolan_Log_Files__c = 1024 AND Pvt_Test_Fail_Count__c = 9223372036854775807"
+			})
+
+			It("returns properly formed clause joined by AND clause", func() {
+				clause, err = MarshalWhereClause(criteria)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(clause).To(Equal(expectedClause))
+			})
+		})
+
+		Context("when all clauses are unsigned integer data types", func() {
+			var criteria QueryCriteriaWithUnsignedIntegerTypes
+			BeforeEach(func() {
+				criteria = QueryCriteriaWithUnsignedIntegerTypes{
+					NumOfCPUCores:                    16,
+					PhysicalCPUCount:                 4,
+					NumOfSuccessivePuppetRunFailures: 0,
+					NumOfCoolanLogFiles:              1024,
+					PvtTestFailCount:                 9223372036854775807,
+				}
+
+				expectedClause = "Num_of_CPU_Cores__c = 16 AND Physical_CPU_Count__c = 4 AND Number_Of_Successive_Puppet_Run_Failures__c = 0 AND Num_Of_Coolan_Log_Files__c = 1024 AND Pvt_Test_Fail_Count__c = 9223372036854775807"
+			})
+
+			It("returns properly formed clause joined by AND clause", func() {
+				clause, err = MarshalWhereClause(criteria)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(clause).To(Equal(expectedClause))
+			})
+		})
+
+		Context("when all clauses are float data types", func() {
+			var criteria QueryCriteriaWithFloatTypes
+			BeforeEach(func() {
+				criteria = QueryCriteriaWithFloatTypes{
+					NumOfCPUCores:    16.00000000,
+					PhysicalCPUCount: -4.12345678,
+				}
+
+				expectedClause = "Num_of_CPU_Cores__c = 16 AND Physical_CPU_Count__c = -4.12345678"
+			})
+
+			It("returns properly formed clause joined by AND clause", func() {
+				clause, err = MarshalWhereClause(criteria)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(clause).To(Equal(expectedClause))
+			})
+		})
+
+		Context("when all clauses are boolean data types", func() {
+			var criteria QueryCriteriaWithBooleanType
+			BeforeEach(func() {
+				criteria = QueryCriteriaWithBooleanType{
+					NUMAEnabled:   true,
+					DisableAlerts: false,
+				}
+
+				expectedClause = "NUMA_Enabled__c = true AND Disable_Alerts__c = false"
+			})
+
+			It("returns properly formed clause joined by AND clause", func() {
+				clause, err = MarshalWhereClause(criteria)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(clause).To(Equal(expectedClause))
+			})
+		})
+
+		Context("when all clauses are date time data types", func() {
+			var criteria QueryCriteriaWithDateTimeType
+			var currentTime time.Time
+			BeforeEach(func() {
+				currentTime = time.Now()
+				criteria = QueryCriteriaWithDateTimeType{
+					CreatedDate: currentTime,
+				}
+
+				expectedClause = "CreatedDate = " + currentTime.Format(DateFormat)
+			})
+
+			It("returns properly formed clause", func() {
+				clause, err = MarshalWhereClause(criteria)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(clause).To(Equal(expectedClause))
+			})
+		})
+
+		Context("when clauses contains gt, gte, lt and lte operators", func() {
+			var criteria QueryCriteriaNumericComparisonOperators
+			BeforeEach(func() {
+				criteria = QueryCriteriaNumericComparisonOperators{
+					NumOfCPUCores:                    16,
+					PhysicalCPUCount:                 4,
+					NumOfSuccessivePuppetRunFailures: 0,
+					NumOfCoolanLogFiles:              1024,
+				}
+
+				expectedClause = "Num_of_CPU_Cores__c > 16 AND Physical_CPU_Count__c < 4 AND Number_Of_Successive_Puppet_Run_Failures__c >= 0 AND Num_Of_Coolan_Log_Files__c <= 1024"
+			})
+
+			It("returns properly formed clause", func() {
+				clause, err = MarshalWhereClause(criteria)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(clause).To(Equal(expectedClause))
 			})
 		})
 
