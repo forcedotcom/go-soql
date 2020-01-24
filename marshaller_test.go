@@ -385,6 +385,35 @@ var _ = Describe("Marshaller", func() {
 			})
 		})
 
+		Context("when all clauses are mixed data types and operators", func() {
+			var criteria QueryCriteriaWithMixedDataTypesAndOperators
+			var currentTime time.Time
+			BeforeEach(func() {
+				currentTime = time.Now()
+				criteria = QueryCriteriaWithMixedDataTypesAndOperators{
+					BIOSType:                         "98.7.654a",
+					NumOfCPUCores:                    32,
+					NUMAEnabled:                      true,
+					PvtTestFailCount:                 256,
+					PhysicalCPUCount:                 4,
+					CreatedDate:                      currentTime,
+					DisableAlerts:                    false,
+					AllocationLatency:                10.5,
+					MajorOSVersion:                   "20",
+					NumOfSuccessivePuppetRunFailures: 0,
+					LastRestart:                      currentTime,
+				}
+
+				expectedClause = "BIOS_Type__c = '98.7.654a' AND Num_of_CPU_Cores__c > 32 AND NUMA_Enabled__c = true AND Pvt_Test_Fail_Count__c <= 256 AND Physical_CPU_Count__c >= 4 AND CreatedDate = " + currentTime.Format(DateFormat) + " AND Disable_Alerts__c = false AND Allocation_Latency__c < 10.5 AND Major_OS_Version__c = '20' AND Number_Of_Successive_Puppet_Run_Failures__c = 0 AND Last_Restart__c > " + currentTime.Format(DateFormat)
+			})
+
+			It("returns properly formed clause", func() {
+				clause, err = MarshalWhereClause(criteria)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(clause).To(Equal(expectedClause))
+			})
+		})
+
 		Context("when clauses contains gt, gte, lt and lte operators", func() {
 			var criteria QueryCriteriaNumericComparisonOperators
 			BeforeEach(func() {
@@ -632,6 +661,34 @@ var _ = Describe("Marshaller", func() {
 					},
 				}
 				expectedQuery = "SELECT Id,Name__c,NonNestedStruct__r.Name,NonNestedStruct__r.SomeValue__c FROM SM_Logical_Host__c WHERE (Host_Name__c LIKE '%-db%' OR Host_Name__c LIKE '%-dbmgmt%') AND Role__r.Name IN ('db','dbmgmt')"
+			})
+
+			It("returns properly constructed soql query", func() {
+				Expect(err).ToNot(HaveOccurred())
+				Expect(actualQuery).To(Equal(expectedQuery))
+			})
+		})
+
+		Context("when valid value with mixed data type and operator is passed as argument", func() {
+			BeforeEach(func() {
+				currentTime := time.Now()
+				soqlStruct = TestSoqlMixedDataAndOperatorStruct{
+					SelectClause: NestedStruct{},
+					WhereClause: QueryCriteriaWithMixedDataTypesAndOperators{
+						BIOSType:                         "98.7.654a",
+						NumOfCPUCores:                    32,
+						NUMAEnabled:                      true,
+						PvtTestFailCount:                 256,
+						PhysicalCPUCount:                 4,
+						CreatedDate:                      currentTime,
+						DisableAlerts:                    false,
+						AllocationLatency:                10.5,
+						MajorOSVersion:                   "20",
+						NumOfSuccessivePuppetRunFailures: 0,
+						LastRestart:                      currentTime,
+					},
+				}
+				expectedQuery = "SELECT Id,Name__c,NonNestedStruct__r.Name,NonNestedStruct__r.SomeValue__c FROM SM_Logical_Host__c WHERE BIOS_Type__c = '98.7.654a' AND Num_of_CPU_Cores__c > 32 AND NUMA_Enabled__c = true AND Pvt_Test_Fail_Count__c <= 256 AND Physical_CPU_Count__c >= 4 AND CreatedDate = " + currentTime.Format(DateFormat) + " AND Disable_Alerts__c = false AND Allocation_Latency__c < 10.5 AND Major_OS_Version__c = '20' AND Number_Of_Successive_Puppet_Run_Failures__c = 0 AND Last_Restart__c > " + currentTime.Format(DateFormat)
 			})
 
 			It("returns properly constructed soql query", func() {

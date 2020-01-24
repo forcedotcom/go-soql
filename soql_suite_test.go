@@ -24,6 +24,11 @@ type TestSoqlStruct struct {
 	WhereClause  TestQueryCriteria `soql:"whereClause"`
 }
 
+type TestSoqlMixedDataAndOperatorStruct struct {
+	SelectClause NestedStruct                                `soql:"selectClause,tableName=SM_Logical_Host__c"`
+	WhereClause  QueryCriteriaWithMixedDataTypesAndOperators `soql:"whereClause"`
+}
+
 type TestQueryCriteria struct {
 	IncludeNamePattern          []string `soql:"likeOperator,fieldName=Host_Name__c"`
 	Roles                       []string `soql:"inOperator,fieldName=Role__r.Name"`
@@ -174,4 +179,18 @@ type QueryCriteriaNumericComparisonOperators struct {
 	PhysicalCPUCount                 int `soql:"lessThanOperator,fieldName=Physical_CPU_Count__c"`
 	NumOfSuccessivePuppetRunFailures int `soql:"greaterThanOrEqualsToOperator,fieldName=Number_Of_Successive_Puppet_Run_Failures__c"`
 	NumOfCoolanLogFiles              int `soql:"lessThanOrEqualsToOperator,fieldName=Num_Of_Coolan_Log_Files__c"`
+}
+
+type QueryCriteriaWithMixedDataTypesAndOperators struct {
+	BIOSType                         string    `soql:"equalsOperator,fieldName=BIOS_Type__c"`
+	NumOfCPUCores                    int       `soql:"greaterThanOperator,fieldName=Num_of_CPU_Cores__c"`
+	NUMAEnabled                      bool      `soql:"equalsOperator,fieldName=NUMA_Enabled__c"`
+	PvtTestFailCount                 int64     `soql:"lessThanOrEqualsToOperator,fieldName=Pvt_Test_Fail_Count__c"`
+	PhysicalCPUCount                 uint8     `soql:"greaterThanOrEqualsToOperator,fieldName=Physical_CPU_Count__c"`
+	CreatedDate                      time.Time `soql:"equalsOperator,fieldName=CreatedDate"`
+	DisableAlerts                    bool      `soql:"equalsOperator,fieldName=Disable_Alerts__c"`
+	AllocationLatency                float64   `soql:"lessThanOperator,fieldName=Allocation_Latency__c"`
+	MajorOSVersion                   string    `soql:"equalsOperator,fieldName=Major_OS_Version__c"`
+	NumOfSuccessivePuppetRunFailures uint32    `soql:"equalsOperator,fieldName=Number_Of_Successive_Puppet_Run_Failures__c"`
+	LastRestart                      time.Time `soql:"greaterThanOperator,fieldName=Last_Restart__c"`
 }

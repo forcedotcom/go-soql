@@ -153,11 +153,11 @@ func constructLikeClause(v interface{}, fieldName string, exclude bool) string {
 func buildInClause(v interface{}, fieldName string) string {
 	var buff strings.Builder
 	var items []string
-	inSingleQuotes := false
+	useSingleQuotes := false
 
 	switch u := v.(type) {
 	case []string:
-		inSingleQuotes = true
+		useSingleQuotes = true
 		items = u
 	case []int, []int8, []int16, []int32, []int64, []uint, []uint8, []uint16, []uint32, []uint64, []float32, []float64, []bool:
 		items = strings.Fields(strings.Trim(fmt.Sprint(u), "[]"))
@@ -178,11 +178,11 @@ func buildInClause(v interface{}, fieldName string) string {
 		if indx > 0 {
 			buff.WriteString(comma)
 		}
-		if inSingleQuotes {
+		if useSingleQuotes {
 			buff.WriteString(singleQuote)
 		}
 		buff.WriteString(item)
-		if inSingleQuotes {
+		if useSingleQuotes {
 			buff.WriteString(singleQuote)
 		}
 	}
@@ -193,37 +193,37 @@ func buildInClause(v interface{}, fieldName string) string {
 }
 
 func buildNotEqualsClause(v interface{}, fieldName string) string {
-	return constructEqualsClause(v, fieldName, notEqualsOperator)
+	return constructComparisonClause(v, fieldName, notEqualsOperator)
 }
 
 func buildEqualsClause(v interface{}, fieldName string) string {
-	return constructEqualsClause(v, fieldName, equalsOperator)
+	return constructComparisonClause(v, fieldName, equalsOperator)
 }
 
 func buildGreaterThanClause(v interface{}, fieldName string) string {
-	return constructEqualsClause(v, fieldName, greaterThanOperator)
+	return constructComparisonClause(v, fieldName, greaterThanOperator)
 }
 
 func buildGreaterThanOrEqualsToClause(v interface{}, fieldName string) string {
-	return constructEqualsClause(v, fieldName, greaterThanOrEqualsToOperator)
+	return constructComparisonClause(v, fieldName, greaterThanOrEqualsToOperator)
 }
 
 func buildLessThanClause(v interface{}, fieldName string) string {
-	return constructEqualsClause(v, fieldName, lessThanOperator)
+	return constructComparisonClause(v, fieldName, lessThanOperator)
 }
 
 func buildLessThanOrEqualsToClause(v interface{}, fieldName string) string {
-	return constructEqualsClause(v, fieldName, lessThanOrEqualsToOperator)
+	return constructComparisonClause(v, fieldName, lessThanOrEqualsToOperator)
 }
 
-func constructEqualsClause(v interface{}, fieldName, operator string) string {
+func constructComparisonClause(v interface{}, fieldName, operator string) string {
 	var buff strings.Builder
 	var value string
-	inSingleQuotes := false
+	useSingleQuotes := false
 
 	switch u := v.(type) {
 	case string:
-		inSingleQuotes = true
+		useSingleQuotes = true
 		value = u
 	case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64, float32, float64, bool:
 		value = fmt.Sprint(u)
@@ -236,11 +236,11 @@ func constructEqualsClause(v interface{}, fieldName, operator string) string {
 	if value != "" {
 		buff.WriteString(fieldName)
 		buff.WriteString(operator)
-		if inSingleQuotes {
+		if useSingleQuotes {
 			buff.WriteString(singleQuote)
 		}
 		buff.WriteString(value)
-		if inSingleQuotes {
+		if useSingleQuotes {
 			buff.WriteString(singleQuote)
 		}
 	}
