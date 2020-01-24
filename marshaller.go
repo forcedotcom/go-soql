@@ -8,28 +8,37 @@ package soql
 
 import (
 	"errors"
+	"fmt"
 	"reflect"
 	"strings"
+	"time"
 )
 
 const (
-	openBrace         = "("
-	closeBrace        = ")"
-	orCondition       = " OR "
-	andCondition      = " AND "
-	singleQuote       = "'"
-	comma             = ","
-	notOperator       = "NOT "
-	openLike          = " LIKE '%"
-	closeLike         = "%'"
-	inOperator        = " IN "
-	equalsOperator    = " = "
-	period            = "."
-	null              = "null"
-	notEqualsOperator = " != "
-	selectKeyword     = "SELECT "
-	whereKeyword      = " WHERE "
-	fromKeyword       = " FROM "
+	openBrace                     = "("
+	closeBrace                    = ")"
+	orCondition                   = " OR "
+	andCondition                  = " AND "
+	singleQuote                   = "'"
+	comma                         = ","
+	notOperator                   = "NOT "
+	openLike                      = " LIKE '%"
+	closeLike                     = "%'"
+	inOperator                    = " IN "
+	equalsOperator                = " = "
+	period                        = "."
+	null                          = "null"
+	notEqualsOperator             = " != "
+	greaterThanOperator           = " > "
+	greaterThanOrEqualsToOperator = " >= "
+	lessThanOperator              = " < "
+	lessThanOrEqualsToOperator    = " <= "
+	selectKeyword                 = "SELECT "
+	whereKeyword                  = " WHERE "
+	fromKeyword                   = " FROM "
+
+	// DateFormat is the golang reference time in the soql dateTime fields format
+	DateFormat = "2006-01-02T15:04:05.000-0700"
 
 	// SoqlTag is the main tag name to be used to mark a struct field to be considered for soql marshaling
 	SoqlTag = "soql"
@@ -58,15 +67,27 @@ const (
 	NotEqualsOperator = "notEqualsOperator"
 	// NullOperator is the tag to be used for " = null " or "!= null" operator in where clause
 	NullOperator = "nullOperator"
+	// GreaterThanOperator is the tag to be used for ">" operator in where clause
+	GreaterThanOperator = "greaterThanOperator"
+	// GreaterThanOrEqualsToOperator is the tag to be used for ">=" operator in where clause
+	GreaterThanOrEqualsToOperator = "greaterThanOrEqualsToOperator"
+	// LessThanOperator is the tag to be used for "<" operator in where clause
+	LessThanOperator = "lessThanOperator"
+	// LessThanOrEqualsToOperator is the tag to be used for "<=" operator in where clause
+	LessThanOrEqualsToOperator = "lessThanOrEqualsToOperator"
 )
 
 var clauseBuilderMap = map[string]func(v interface{}, fieldName string) string{
-	LikeOperator:      buildLikeClause,
-	NotLikeOperator:   buildNotLikeClause,
-	InOperator:        buildInClause,
-	EqualsOperator:    buildEqualsClause,
-	NullOperator:      buildNullClause,
-	NotEqualsOperator: buildNotEqualsClause,
+	LikeOperator:                  buildLikeClause,
+	NotLikeOperator:               buildNotLikeClause,
+	InOperator:                    buildInClause,
+	EqualsOperator:                buildEqualsClause,
+	NullOperator:                  buildNullClause,
+	NotEqualsOperator:             buildNotEqualsClause,
+	GreaterThanOperator:           buildGreaterThanClause,
+	GreaterThanOrEqualsToOperator: buildGreaterThanOrEqualsToClause,
+	LessThanOperator:              buildLessThanClause,
+	LessThanOrEqualsToOperator:    buildLessThanOrEqualsToClause,
 }
 
 var (
@@ -131,10 +152,23 @@ func constructLikeClause(v interface{}, fieldName string, exclude bool) string {
 
 func buildInClause(v interface{}, fieldName string) string {
 	var buff strings.Builder
-	items, ok := v.([]string)
-	if !ok {
+	var items []string
+	useSingleQuotes := false
+
+	switch u := v.(type) {
+	case []string:
+		useSingleQuotes = true
+		items = u
+	case []int, []int8, []int16, []int32, []int64, []uint, []uint8, []uint16, []uint32, []uint64, []float32, []float64, []bool:
+		items = strings.Fields(strings.Trim(fmt.Sprint(u), "[]"))
+	case []time.Time:
+		for _, item := range u {
+			items = append(items, item.Format(DateFormat))
+		}
+	default:
 		return buff.String()
 	}
+
 	if len(items) > 0 {
 		buff.WriteString(fieldName)
 		buff.WriteString(inOperator)
@@ -144,9 +178,13 @@ func buildInClause(v interface{}, fieldName string) string {
 		if indx > 0 {
 			buff.WriteString(comma)
 		}
-		buff.WriteString(singleQuote)
+		if useSingleQuotes {
+			buff.WriteString(singleQuote)
+		}
 		buff.WriteString(item)
-		buff.WriteString(singleQuote)
+		if useSingleQuotes {
+			buff.WriteString(singleQuote)
+		}
 	}
 	if len(items) > 0 {
 		buff.WriteString(closeBrace)
@@ -155,25 +193,56 @@ func buildInClause(v interface{}, fieldName string) string {
 }
 
 func buildNotEqualsClause(v interface{}, fieldName string) string {
-	return constructEqualsClause(v, fieldName, notEqualsOperator)
+	return constructComparisonClause(v, fieldName, notEqualsOperator)
 }
 
 func buildEqualsClause(v interface{}, fieldName string) string {
-	return constructEqualsClause(v, fieldName, equalsOperator)
+	return constructComparisonClause(v, fieldName, equalsOperator)
 }
 
-func constructEqualsClause(v interface{}, fieldName, operator string) string {
+func buildGreaterThanClause(v interface{}, fieldName string) string {
+	return constructComparisonClause(v, fieldName, greaterThanOperator)
+}
+
+func buildGreaterThanOrEqualsToClause(v interface{}, fieldName string) string {
+	return constructComparisonClause(v, fieldName, greaterThanOrEqualsToOperator)
+}
+
+func buildLessThanClause(v interface{}, fieldName string) string {
+	return constructComparisonClause(v, fieldName, lessThanOperator)
+}
+
+func buildLessThanOrEqualsToClause(v interface{}, fieldName string) string {
+	return constructComparisonClause(v, fieldName, lessThanOrEqualsToOperator)
+}
+
+func constructComparisonClause(v interface{}, fieldName, operator string) string {
 	var buff strings.Builder
-	value, ok := v.(string)
-	if !ok {
+	var value string
+	useSingleQuotes := false
+
+	switch u := v.(type) {
+	case string:
+		useSingleQuotes = true
+		value = u
+	case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64, float32, float64, bool:
+		value = fmt.Sprint(u)
+	case time.Time:
+		value = u.Format(DateFormat)
+	default:
 		return buff.String()
 	}
+
 	if value != "" {
 		buff.WriteString(fieldName)
 		buff.WriteString(operator)
-		buff.WriteString(singleQuote)
+		if useSingleQuotes {
+			buff.WriteString(singleQuote)
+		}
 		buff.WriteString(value)
-		buff.WriteString(singleQuote)
+		if useSingleQuotes {
+			buff.WriteString(singleQuote)
+		}
 	}
 	return buff.String()
 }
@@ -255,13 +324,18 @@ func marshalWhereClause(v interface{}, tableName string) (string, error) {
 // 4. IN: In operator. E.g. Role__r.Name IN ('db','dbmgmt'). Use inOperator in soql tag
 // 5. NULL ( = null ): Null operator. E.g. Last_Discovered_Date__c = null. Use nullOperator in soql tag
 // 6. NOT NULL: Not null operator. E.g. Last_Discovered_Date__c != null. Use nullOperator in soql tag
+// 7. GREATER THAN: Greater than operator. E.g. Last_Discovered_Date__c > 2006-01-02T15:04:05.000-0700. Use greaterThanOperator in soql tag
+// 8. GREATER THAN OR EQUALS TO: Greater than or equals to operator. E.g. Num_of_CPU_Cores__c >= 16. Use greaterThanOrEqualsToOperator in soql tag
+// 9. LESS THAN: Less than operator. E.g. Last_Discovered_Date__c < 2006-01-02T15:04:05.000-0700. Use lessThanOperator in soql tag
+// 10. LESS THAN OR EQUALS TO: Less than or equals to operator. E.g. Num_of_CPU_Cores__c <= 16. Use lessThanOrEqualsToOperator in soql tag
 // Consider following go struct
 // type TestQueryCriteria struct {
-// 	IncludeNamePattern          []string `soql:"likeOperator,fieldName=Host_Name__c"`
-// 	Roles                       []string `soql:"inOperator,fieldName=Role__r.Name"`
-// 	ExcludeNamePattern          []string `soql:"notLikeOperator,fieldName=Host_Name__c"`
-// 	AssetType                   string   `soql:"equalsOperator,fieldName=Tech_Asset__r.Asset_Type_Asset_Type__c"`
-// 	AllowNullLastDiscoveredDate *bool    `soql:"nullOperator,fieldName=Last_Discovered_Date__c"`
+// 	IncludeNamePattern          []string  `soql:"likeOperator,fieldName=Host_Name__c"`
+// 	Roles                       []string  `soql:"inOperator,fieldName=Role__r.Name"`
+// 	ExcludeNamePattern          []string  `soql:"notLikeOperator,fieldName=Host_Name__c"`
+// 	AssetType                   string    `soql:"equalsOperator,fieldName=Tech_Asset__r.Asset_Type_Asset_Type__c"`
+// 	AllowNullLastDiscoveredDate *bool     `soql:"nullOperator,fieldName=Last_Discovered_Date__c"`
+//  NumOfCPUCores               int       `soql:"greaterThanOperator,fieldName=Num_of_CPU_Cores__c"`
 // }
 // allowNull := false
 // t := TestQueryCriteria{
@@ -270,6 +344,7 @@ func marshalWhereClause(v interface{}, tableName string) (string, error) {
 // 		Roles:                       []string{"db", "dbmgmt"},
 // 		ExcludeNamePattern:          []string{"-core", "-drp"},
 // 		AllowNullLastDiscoveredDate: &allowNull,
+// 		NumOfCPUCores:               16,
 // }
 // whereClause, err := MarshalWhereClause(t)
 // if err  != nil {
@@ -277,7 +352,7 @@ func marshalWhereClause(v interface{}, tableName string) (string, error) {
 // }
 // fmt.Println(whereClause)
 // This will print whereClause as:
-// (Host_Name__c LIKE '%-db%' OR Host_Name__c LIKE '%-dbmgmt%') AND Role__r.Name IN ('db','dbmgmt') AND ((NOT Host_Name__c LIKE '%-core%') AND (NOT Host_Name__c LIKE '%-drp%')) AND Tech_Asset__r.Asset_Type_Asset_Type__c = 'SERVER' AND Last_Discovered_Date__c != null
+// (Host_Name__c LIKE '%-db%' OR Host_Name__c LIKE '%-dbmgmt%') AND Role__r.Name IN ('db','dbmgmt') AND ((NOT Host_Name__c LIKE '%-core%') AND (NOT Host_Name__c LIKE '%-drp%')) AND Tech_Asset__r.Asset_Type_Asset_Type__c = 'SERVER' AND Last_Discovered_Date__c != null AND Num_of_CPU_Cores__c > 16
 func MarshalWhereClause(v interface{}) (string, error) {
 	return marshalWhereClause(v, "")
 }

@@ -8,6 +8,7 @@ package soql_test
 
 import (
 	"testing"
+	"time"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -21,6 +22,11 @@ func TestSoql(t *testing.T) {
 type TestSoqlStruct struct {
 	SelectClause NestedStruct      `soql:"selectClause,tableName=SM_Logical_Host__c"`
 	WhereClause  TestQueryCriteria `soql:"whereClause"`
+}
+
+type TestSoqlMixedDataAndOperatorStruct struct {
+	SelectClause NestedStruct                                `soql:"selectClause,tableName=SM_Logical_Host__c"`
+	WhereClause  QueryCriteriaWithMixedDataTypesAndOperators `soql:"whereClause"`
 }
 
 type TestQueryCriteria struct {
@@ -114,7 +120,6 @@ type QueryCriteriaWithInvalidTypes struct {
 	IncludeNamePattern          []bool `soql:"likeOperator,fieldName=Host_Name__c"`
 	Roles                       []int  `soql:"inOperator,fieldName=Role__r.Name"`
 	ExcludeNamePattern          []bool `soql:"notLikeOperator,fieldName=Host_Name__c"`
-	AssetType                   int    `soql:"equalsOperator,fieldName=Tech_Asset__r.Asset_Type_Asset_Type__c"`
 	AllowNullLastDiscoveredDate string `soql:"nullOperator,fieldName=Last_Discovered_Date__c"`
 }
 
@@ -137,4 +142,55 @@ type DefaultTableNameStruct struct {
 type DefaultFieldNameQueryCriteria struct {
 	IncludeNamePattern []string `soql:"likeOperator,fieldName=Host_Name__c"`
 	Role               []string `soql:"inOperator"`
+}
+
+type QueryCriteriaWithIntegerTypes struct {
+	NumOfCPUCores                    int   `soql:"equalsOperator,fieldName=Num_of_CPU_Cores__c"`
+	PhysicalCPUCount                 int8  `soql:"equalsOperator,fieldName=Physical_CPU_Count__c"`
+	NumOfSuccessivePuppetRunFailures int16 `soql:"equalsOperator,fieldName=Number_Of_Successive_Puppet_Run_Failures__c"`
+	NumOfCoolanLogFiles              int32 `soql:"equalsOperator,fieldName=Num_Of_Coolan_Log_Files__c"`
+	PvtTestFailCount                 int64 `soql:"equalsOperator,fieldName=Pvt_Test_Fail_Count__c"`
+}
+
+type QueryCriteriaWithUnsignedIntegerTypes struct {
+	NumOfCPUCores                    uint   `soql:"equalsOperator,fieldName=Num_of_CPU_Cores__c"`
+	PhysicalCPUCount                 uint8  `soql:"equalsOperator,fieldName=Physical_CPU_Count__c"`
+	NumOfSuccessivePuppetRunFailures uint16 `soql:"equalsOperator,fieldName=Number_Of_Successive_Puppet_Run_Failures__c"`
+	NumOfCoolanLogFiles              uint32 `soql:"equalsOperator,fieldName=Num_Of_Coolan_Log_Files__c"`
+	PvtTestFailCount                 uint64 `soql:"equalsOperator,fieldName=Pvt_Test_Fail_Count__c"`
+}
+
+type QueryCriteriaWithFloatTypes struct {
+	NumOfCPUCores    float32 `soql:"equalsOperator,fieldName=Num_of_CPU_Cores__c"`
+	PhysicalCPUCount float64 `soql:"equalsOperator,fieldName=Physical_CPU_Count__c"`
+}
+
+type QueryCriteriaWithBooleanType struct {
+	NUMAEnabled   bool `soql:"equalsOperator,fieldName=NUMA_Enabled__c"`
+	DisableAlerts bool `soql:"equalsOperator,fieldName=Disable_Alerts__c"`
+}
+
+type QueryCriteriaWithDateTimeType struct {
+	CreatedDate time.Time `soql:"equalsOperator,fieldName=CreatedDate"`
+}
+
+type QueryCriteriaNumericComparisonOperators struct {
+	NumOfCPUCores                    int `soql:"greaterThanOperator,fieldName=Num_of_CPU_Cores__c"`
+	PhysicalCPUCount                 int `soql:"lessThanOperator,fieldName=Physical_CPU_Count__c"`
+	NumOfSuccessivePuppetRunFailures int `soql:"greaterThanOrEqualsToOperator,fieldName=Number_Of_Successive_Puppet_Run_Failures__c"`
+	NumOfCoolanLogFiles              int `soql:"lessThanOrEqualsToOperator,fieldName=Num_Of_Coolan_Log_Files__c"`
+}
+
+type QueryCriteriaWithMixedDataTypesAndOperators struct {
+	BIOSType                         string    `soql:"equalsOperator,fieldName=BIOS_Type__c"`
+	NumOfCPUCores                    int       `soql:"greaterThanOperator,fieldName=Num_of_CPU_Cores__c"`
+	NUMAEnabled                      bool      `soql:"equalsOperator,fieldName=NUMA_Enabled__c"`
+	PvtTestFailCount                 int64     `soql:"lessThanOrEqualsToOperator,fieldName=Pvt_Test_Fail_Count__c"`
+	PhysicalCPUCount                 uint8     `soql:"greaterThanOrEqualsToOperator,fieldName=Physical_CPU_Count__c"`
+	CreatedDate                      time.Time `soql:"equalsOperator,fieldName=CreatedDate"`
+	DisableAlerts                    bool      `soql:"equalsOperator,fieldName=Disable_Alerts__c"`
+	AllocationLatency                float64   `soql:"lessThanOperator,fieldName=Allocation_Latency__c"`
+	MajorOSVersion                   string    `soql:"equalsOperator,fieldName=Major_OS_Version__c"`
+	NumOfSuccessivePuppetRunFailures uint32    `soql:"equalsOperator,fieldName=Number_Of_Successive_Puppet_Run_Failures__c"`
+	LastRestart                      time.Time `soql:"greaterThanOperator,fieldName=Last_Restart__c"`
 }
