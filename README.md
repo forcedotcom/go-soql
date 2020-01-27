@@ -222,7 +222,7 @@ This section explains the list of tags that can be used on members tagged with `
 ```
 type QueryCriteria struct {
 	IncludeNamePattern               []string  `soql:"likeOperator,fieldName=Name__c"`
-    ExcludeNamePattern               []string  `soql:"notLikeOperator,fieldName=Name__c"`
+	ExcludeNamePattern               []string  `soql:"notLikeOperator,fieldName=Name__c"`
 	Roles                            []string  `soql:"inOperator,fieldName=Role__r.Name"`
 	SomeType                         string    `soql:"equalsOperator,fieldName=Some_Type__c"`
 	Status                           string    `soql:"notEqualsOperator,fieldName=Status__c"`
@@ -230,7 +230,7 @@ type QueryCriteria struct {
 	NumOfCPUCores                    int       `soql:"greaterThanOperator,fieldName=Num_of_CPU_Cores__c"`
 	PhysicalCPUCount                 uint8     `soql:"greaterThanOrEqualsToOperator,fieldName=Physical_CPU_Count__c"`
 	AllocationLatency                float64   `soql:"lessThanOperator,fieldName=Allocation_Latency__c"`
-    PvtTestFailCount                 int64     `soql:"lessThanOrEqualsToOperator,fieldName=Pvt_Test_Fail_Count__c"`
+	PvtTestFailCount                 int64     `soql:"lessThanOrEqualsToOperator,fieldName=Pvt_Test_Fail_Count__c"`
 }
 ```
 
