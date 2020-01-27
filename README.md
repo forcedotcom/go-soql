@@ -37,6 +37,8 @@ Following are supported parameters:
 
 If `fieldName` and `tableName` parameters are not provided then the name of the field will be used as default.
 
+### Basic Usage
+
 Lets take a look at one example of a simple non-nested struct and how it can be used to construct a soql query:
 
 ```
@@ -75,6 +77,8 @@ Above struct will result in following SOQL query:
 ```
 SELECT Name,SomeValue__c FROM SM_SomeObject__C WHERE (Name__c LIKE '%foo%' OR Name__c LIKE '%bar%') AND Role__c IN ('admin','user')
 ```
+
+### Advanced usage
 
 This package supports child to parent as well as parent to child relationships. Here's a more complex example that includes both the relationships and how the soql query is marshalled:
 
@@ -159,6 +163,10 @@ SELECT Id,Name__c,NonNestedStruct__r.Name,NonNestedStruct__r.SomeValue__c,(SELEC
 You can find detailed usage in `marshaller_test.go`.
 
 Intended users of this package are developers writing clients to interact with Salesforce. They can now define golang structs, annotate them and generate SOQL queries to be passed to Salesforce API. Great thing about this is that the json structure of returned response matches with selectClause, so you can just unmarshal response into the golang struct that was annotated with `selectClause` and now you have your query response directly available in golang struct.
+
+## Tags explained
+
+This section explains each of the supported tags in detail
 
 ### Top level tags
 
@@ -330,7 +338,7 @@ type QueryCriteria struct {
    // whereClause will be: WHERE Pvt_Test_Fail_Count__c <= 32
    ```
 
-If there are more than one fields in the struct tagged with `whereClause` then they will be combined using `AND` logical operator. This has been demonstrated in the code snippets in [How to use](#how-to-use).
+If there are more than one fields in the struct tagged with `whereClause` then they will be combined using `AND` logical operator. This has been demonstrated in the code snippets in [Advanced usage](#advanced-usage).
 
 ## License
 
