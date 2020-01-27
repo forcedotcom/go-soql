@@ -160,6 +160,178 @@ You can find detailed usage in `marshaller_test.go`.
 
 Intended users of this package are developers writing clients to interact with Salesforce. They can now define golang structs, annotate them and generate SOQL queries to be passed to Salesforce API. Great thing about this is that the json structure of returned response matches with selectClause, so you can just unmarshal response into the golang struct that was annotated with `selectClause` and now you have your query response directly available in golang struct.
 
+### Top level tags
+
+This section explains top level tags used in constructing SOQL query. Following snippet will be used as example for explaining these tags:
+
+```
+type TestSoqlStruct struct {
+    SelectClause NonNestedStruct   `soql:"selectClause,tableName=SM_SomeObject__c"`
+    WhereClause  TestQueryCriteria `soql:"whereClause"`
+}
+type TestQueryCriteria struct {
+    IncludeNamePattern          []string `soql:"likeOperator,fieldName=Name__c"`
+    Roles                       []string `soql:"inOperator,fieldName=Role__c"`
+}
+type NonNestedStruct struct {
+    Name          string `soql:"selectColumn,fieldName=Name__c"`
+    SomeValue     string `soql:"selectColumn,fieldName=SomeValue__c"`
+}
+```
+
+1. `selectClause`: This tag is used on the struct which should be considered for generating part of SOQL query that contains columns/fields that should be selected. It should be used only on `struct` type. If used on types other than `struct` it will be ignored. This tag is associated with `tableName` parameter. It specifies the name of the table (Salesforce object) from which the columns should be selected. If not specified name of the field is used as table name (Salesforce object). In the snippet above `SelectClause` member of `TestSoqlStruct` is tagged with `selectClause` to indicate that members in `NonNestedStruct` should be considered as fields to be selected from Salesforce object `SM_SomeObject__c`.
+
+1. `whereClause`: This tag is used on the struct which encapsulates the query criteria for SOQL query. There are no parameters for this tag. In the snippet above `WhereClause` member of `TestSoqlStruct` is tagged with `whereClause` to indicate that members in `TestQueryCriteria` should be considered for generating `WHERE` clause in SOQL query. If there are more than one field in `TestQueryCriteria` struct then they will be combined using `AND` logical operator.
+
+### Second level tags
+
+This section explains the tags that should be used on members of struct tagged with `selectClause` and `whereClause`. These tags indicate how the members of the struct should be used in generating `SELECT` and `WHERE` clause.
+
+#### Tags to be used on selectClause structs
+
+This section explains the list of tags that can be used on members tagged with `selectClause`. Following snippet will be used explaining these tags:
+
+```
+type ParentStruct struct {
+	ID                string          `soql:"selectColumn,fieldName=Id"`
+	Name              string          `soql:"selectColumn,fieldName=Name__c"`
+	NonNestedStruct   NonNestedStruct `soql:"selectColumn,fieldName=NonNestedStruct__r"` // child to parent relationship
+	ChildStruct       TestChildStruct `soql:"selectChild,fieldName=Child__r"`            // parent to child relationship
+	SomeNonSoqlMember string          `json:"some_nonsoql_member"`
+}
+
+type NonNestedStruct struct {
+	Name          string `soql:"selectColumn,fieldName=Name"`
+	SomeValue     string `soql:"selectColumn,fieldName=SomeValue__c"`
+	NonSoqlStruct NonSoqlStruct
+}
+
+type TestChildStruct struct {
+	SelectClause ChildStruct        `soql:"selectClause,tableName=SM_Child__c"`
+	WhereClause  ChildQueryCriteria `soql:"whereClause"`
+}
+```
+
+1. `selectColumn`: Members that are tagged with this tag will be considered in generating select clause of SOQL query. This tag is associated with `fieldName` parameter. It specifies the name of the field of underlying Salesforce object. If not specified the name of the field is used as underlying Salesforce object field name. This tag can be used on primitive data types as well as user defined structs. If used on user defined structs like `NonNestedStruct` member in `ParentStruct` it will be treated as child to parent relationship and the value specified in `fieldName` parameter (or default value of name of the member itself) will be prefixed to the members of that struct (`NonNestedStruct` in case of our example above).
+1. `selectChild`: This tag is used on members which should be modelled as parent to child relation. It should be used on `struct` type only. If used on any other type then `ErrInvalidTag` error will be returned. The member on which this tag is used should in turn consist of members tagged with `selectClause` and `whereClause`. Please refer to `ChildStruct` member of `ParentStruct`.
+
+#### Tags to be used on whereClause structs
+
+This section explains the list of tags that can be used on members tagged with `whereClause`. Following snippet will be used as example for explaining these tags:
+
+```
+type QueryCriteria struct {
+	IncludeNamePattern               []string  `soql:"likeOperator,fieldName=Name__c"`
+    ExcludeNamePattern               []string  `soql:"notLikeOperator,fieldName=Name__c"`
+	Roles                            []string  `soql:"inOperator,fieldName=Role__r.Name"`
+	SomeType                         string    `soql:"equalsOperator,fieldName=Some_Type__c"`
+	Status                           string    `soql:"notEqualsOperator,fieldName=Status__c"`
+	AllowNullValue                   *bool     `soql:"nullOperator,fieldName=Value__c"`
+	NumOfCPUCores                    int       `soql:"greaterThanOperator,fieldName=Num_of_CPU_Cores__c"`
+	PhysicalCPUCount                 uint8     `soql:"greaterThanOrEqualsToOperator,fieldName=Physical_CPU_Count__c"`
+	AllocationLatency                float64   `soql:"lessThanOperator,fieldName=Allocation_Latency__c"`
+    PvtTestFailCount                 int64     `soql:"lessThanOrEqualsToOperator,fieldName=Pvt_Test_Fail_Count__c"`
+}
+```
+
+1. `likeOperator`: This tag is used on members which should be considered to construct field expressions in where clause using `LIKE` comparison operator. This tag should be used on member of type `[]string`. Used on any other type, this tag will be ignored. If there are more than one item in the slice then they will be combined using `OR` logical operator. Example will clarify this more:
+
+```
+whereClause, _ := MarshalWhereClause(QueryCriteria{
+    IncludeNamePattern: []string{"-foo", "-bar"},
+})
+// whereClause will be: WHERE (Name__c LIKE '%-foo%' OR Name__c LIKE '%-bar%')
+```
+
+1. `notLikeOperator`: This tag is used on members which should be considered to construct field expressions in where clause using `NOT LIKE` comparison operator. This tag should be used on member of type `[]string`. Used on any other type, this tag will be ignored. If there are more than one item in the slice then they will be combined using `AND` logical operator. Example will clarify this more:
+
+```
+whereClause, _ := MarshalWhereClause(QueryCriteria{
+    ExcludeNamePattern: []string{"-far", "-baz"},
+})
+// whereClause will be: WHERE ((NOT Name__c LIKE '%-far%') AND (NOT Name__c LIKE '%-baz%'))
+```
+
+1. `inOperator`: This tag is used on members which should be considered to construct field expressions in where clause using `IN` comparison operator. This tag should be used on member of type `[]string`, `[]int`, `[]int8`, `[]int16`, `[]int32`, `[]int64`, `[]uint`, `[]uint8`, `[]uint16`, `[]uint32`, `[]uint64`, `[]float32`, `[]float64`, `[]bool` or `[]time.Time`. Used on any other type, this tag will be ignored. Example will clarify this more:
+
+```
+whereClause, _ := MarshalWhereClause(QueryCriteria{
+    Roles: []string{"admin", "user"},
+})
+// whereClause will be: WHERE Role__r.Name IN ('admin','user')
+```
+
+1. `equalsOperator`: This tag is used on members which should be considered to construct field expressions in where clause using `=` comparison operator. This tag should be used on member of type `string`, `int`, `int8`, `int16`, `int32`, `int64`, `uint`, `uint8`, `uint16`, `uint32`, `uint64`, `float32`, `float64`, `bool` or `time.Time`. Used on any other type, this tag will be ignored. Example will clarify this more:
+
+```
+whereClause, _ := MarshalWhereClause(QueryCriteria{
+    SomeType: "SomeValue",
+})
+// whereClause will be: WHERE Some_Type__c = 'SomeValue'
+```
+
+1. `notEqualsOperator`: This tag is used on members which should be considered to construct field expressions in where clause using `!=` comparison operator. This tag should be used on member of type `string`, `int`, `int8`, `int16`, `int32`, `int64`, `uint`, `uint8`, `uint16`, `uint32`, `uint64`, `float32`, `float64`, `bool` or `time.Time`. Used on any other type, this tag will be ignored. Example will clarify this more:
+
+```
+whereClause, _ := MarshalWhereClause(QueryCriteria{
+    Status: "DOWN",
+})
+// whereClause will be: WHERE Status__c != 'DOWN'
+```
+
+1. `nullOperator`: This tag is used on members which should be considered to construct field expressions in where clause using `= null` or `!= null` comparison operator. This tag should be used on member of type `*bool` or `bool`. Used on any other type, this tag will be ignored. Recommended to use `*bool` as `bool` will always be initialized by golang to `false` and will result in `!= null` check even if not intended. Example will clarify this more:
+
+```
+allowNull := true
+whereClause, _ := MarshalWhereClause(QueryCriteria{
+    AllowNullValue: &allowNull,
+})
+// whereClause will be: WHERE Value__c = null
+allowNull = false
+whereClause, _ := MarshalWhereClause(QueryCriteria{
+    AllowNullValue: &allowNull,
+})
+// whereClause will be: WHERE Value__c != null
+```
+
+1. `greaterThanOperator`: This tag is used on members which should be considered to construct field expressions in where clause using `>` comparison operator. This tag should be used on member of type `string`, `int`, `int8`, `int16`, `int32`, `int64`, `uint`, `uint8`, `uint16`, `uint32`, `uint64`, `float32`, `float64`, `bool` or `time.Time`. Used on any other type, this tag will be ignored. Example will clarify this more:
+
+```
+whereClause, _ := MarshalWhereClause(QueryCriteria{
+    NumOfCPUCores: 8,
+})
+// whereClause will be: WHERE Num_of_CPU_Cores__c > 8
+```
+
+1. `greaterThanOrEqualsToOperator`: This tag is used on members which should be considered to construct field expressions in where clause using `>=` comparison operator. This tag should be used on member of type `string`, `int`, `int8`, `int16`, `int32`, `int64`, `uint`, `uint8`, `uint16`, `uint32`, `uint64`, `float32`, `float64`, `bool` or `time.Time`. Used on any other type, this tag will be ignored. Example will clarify this more:
+
+```
+whereClause, _ := MarshalWhereClause(QueryCriteria{
+    PhysicalCPUCount: 4,
+})
+// whereClause will be: WHERE Physical_CPU_Count__c >= 4
+```
+
+1. `lessThanOperator`: This tag is used on members which should be considered to construct field expressions in where clause using `<` comparison operator. This tag should be used on member of type `string`, `int`, `int8`, `int16`, `int32`, `int64`, `uint`, `uint8`, `uint16`, `uint32`, `uint64`, `float32`, `float64`, `bool` or `time.Time`. Used on any other type, this tag will be ignored. Example will clarify this more:
+
+```
+whereClause, _ := MarshalWhereClause(QueryCriteria{
+    AllocationLatency: 28.9,
+})
+// whereClause will be: WHERE Allocation_Latency__c < 28.9
+```
+
+1. `lessThanOrEqualsToOperator`: This tag is used on members which should be considered to construct field expressions in where clause using `<=` comparison operator. This tag should be used on member of type `string`, `int`, `int8`, `int16`, `int32`, `int64`, `uint`, `uint8`, `uint16`, `uint32`, `uint64`, `float32`, `float64`, `bool` or `time.Time`. Used on any other type, this tag will be ignored. Example will clarify this more:
+
+```
+whereClause, _ := MarshalWhereClause(QueryCriteria{
+    PvtTestFailCount: 32,
+})
+// whereClause will be: WHERE Pvt_Test_Fail_Count__c <= 32
+```
+
+If there are more than one fields in the struct tagged with `whereClause` then they will be combined using `AND` logical operator. This has been demonstrated in the code snippets in [How to use](#how-to-use).
+
 ## License
 
 go-soql is BSD3 licensed. Here is the link to license [file](./LICENSE.txt)
