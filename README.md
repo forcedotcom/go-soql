@@ -236,99 +236,99 @@ type QueryCriteria struct {
 
 1. `likeOperator`: This tag is used on members which should be considered to construct field expressions in where clause using `LIKE` comparison operator. This tag should be used on member of type `[]string`. Used on any other type, this tag will be ignored. If there are more than one item in the slice then they will be combined using `OR` logical operator. Example will clarify this more:
 
-```
-whereClause, _ := MarshalWhereClause(QueryCriteria{
-    IncludeNamePattern: []string{"-foo", "-bar"},
-})
-// whereClause will be: WHERE (Name__c LIKE '%-foo%' OR Name__c LIKE '%-bar%')
-```
+   ```
+   whereClause, _ := MarshalWhereClause(QueryCriteria{
+       IncludeNamePattern: []string{"-foo", "-bar"},
+   })
+   // whereClause will be: WHERE (Name__c LIKE '%-foo%' OR Name__c LIKE '%-bar%')
+   ```
 
 1. `notLikeOperator`: This tag is used on members which should be considered to construct field expressions in where clause using `NOT LIKE` comparison operator. This tag should be used on member of type `[]string`. Used on any other type, this tag will be ignored. If there are more than one item in the slice then they will be combined using `AND` logical operator. Example will clarify this more:
 
-```
-whereClause, _ := MarshalWhereClause(QueryCriteria{
-    ExcludeNamePattern: []string{"-far", "-baz"},
-})
-// whereClause will be: WHERE ((NOT Name__c LIKE '%-far%') AND (NOT Name__c LIKE '%-baz%'))
-```
+   ```
+   whereClause, _ := MarshalWhereClause(QueryCriteria{
+       ExcludeNamePattern: []string{"-far", "-baz"},
+   })
+   // whereClause will be: WHERE ((NOT Name__c LIKE '%-far%') AND (NOT Name__c LIKE '%-baz%'))
+   ```
 
 1. `inOperator`: This tag is used on members which should be considered to construct field expressions in where clause using `IN` comparison operator. This tag should be used on member of type `[]string`, `[]int`, `[]int8`, `[]int16`, `[]int32`, `[]int64`, `[]uint`, `[]uint8`, `[]uint16`, `[]uint32`, `[]uint64`, `[]float32`, `[]float64`, `[]bool` or `[]time.Time`. Used on any other type, this tag will be ignored. Example will clarify this more:
 
-```
-whereClause, _ := MarshalWhereClause(QueryCriteria{
-    Roles: []string{"admin", "user"},
-})
-// whereClause will be: WHERE Role__r.Name IN ('admin','user')
-```
+   ```
+   whereClause, _ := MarshalWhereClause(QueryCriteria{
+       Roles: []string{"admin", "user"},
+   })
+   // whereClause will be: WHERE Role__r.Name IN ('admin','user')
+   ```
 
 1. `equalsOperator`: This tag is used on members which should be considered to construct field expressions in where clause using `=` comparison operator. This tag should be used on member of type `string`, `int`, `int8`, `int16`, `int32`, `int64`, `uint`, `uint8`, `uint16`, `uint32`, `uint64`, `float32`, `float64`, `bool` or `time.Time`. Used on any other type, this tag will be ignored. Example will clarify this more:
 
-```
-whereClause, _ := MarshalWhereClause(QueryCriteria{
-    SomeType: "SomeValue",
-})
-// whereClause will be: WHERE Some_Type__c = 'SomeValue'
-```
+   ```
+   whereClause, _ := MarshalWhereClause(QueryCriteria{
+       SomeType: "SomeValue",
+   })
+   // whereClause will be: WHERE Some_Type__c = 'SomeValue'
+   ```
 
 1. `notEqualsOperator`: This tag is used on members which should be considered to construct field expressions in where clause using `!=` comparison operator. This tag should be used on member of type `string`, `int`, `int8`, `int16`, `int32`, `int64`, `uint`, `uint8`, `uint16`, `uint32`, `uint64`, `float32`, `float64`, `bool` or `time.Time`. Used on any other type, this tag will be ignored. Example will clarify this more:
 
-```
-whereClause, _ := MarshalWhereClause(QueryCriteria{
-    Status: "DOWN",
-})
-// whereClause will be: WHERE Status__c != 'DOWN'
-```
+   ```
+   whereClause, _ := MarshalWhereClause(QueryCriteria{
+       Status: "DOWN",
+   })
+   // whereClause will be: WHERE Status__c != 'DOWN'
+   ```
 
 1. `nullOperator`: This tag is used on members which should be considered to construct field expressions in where clause using `= null` or `!= null` comparison operator. This tag should be used on member of type `*bool` or `bool`. Used on any other type, this tag will be ignored. Recommended to use `*bool` as `bool` will always be initialized by golang to `false` and will result in `!= null` check even if not intended. Example will clarify this more:
 
-```
-allowNull := true
-whereClause, _ := MarshalWhereClause(QueryCriteria{
-    AllowNullValue: &allowNull,
-})
-// whereClause will be: WHERE Value__c = null
-allowNull = false
-whereClause, _ := MarshalWhereClause(QueryCriteria{
-    AllowNullValue: &allowNull,
-})
-// whereClause will be: WHERE Value__c != null
-```
+   ```
+   allowNull := true
+   whereClause, _ := MarshalWhereClause(QueryCriteria{
+       AllowNullValue: &allowNull,
+   })
+   // whereClause will be: WHERE Value__c = null
+   allowNull = false
+   whereClause, _ := MarshalWhereClause(QueryCriteria{
+       AllowNullValue: &allowNull,
+   })
+   // whereClause will be: WHERE Value__c != null
+   ```
 
 1. `greaterThanOperator`: This tag is used on members which should be considered to construct field expressions in where clause using `>` comparison operator. This tag should be used on member of type `string`, `int`, `int8`, `int16`, `int32`, `int64`, `uint`, `uint8`, `uint16`, `uint32`, `uint64`, `float32`, `float64`, `bool` or `time.Time`. Used on any other type, this tag will be ignored. Example will clarify this more:
 
-```
-whereClause, _ := MarshalWhereClause(QueryCriteria{
-    NumOfCPUCores: 8,
-})
-// whereClause will be: WHERE Num_of_CPU_Cores__c > 8
-```
+   ```
+   whereClause, _ := MarshalWhereClause(QueryCriteria{
+       NumOfCPUCores: 8,
+   })
+   // whereClause will be: WHERE Num_of_CPU_Cores__c > 8
+   ```
 
 1. `greaterThanOrEqualsToOperator`: This tag is used on members which should be considered to construct field expressions in where clause using `>=` comparison operator. This tag should be used on member of type `string`, `int`, `int8`, `int16`, `int32`, `int64`, `uint`, `uint8`, `uint16`, `uint32`, `uint64`, `float32`, `float64`, `bool` or `time.Time`. Used on any other type, this tag will be ignored. Example will clarify this more:
 
-```
-whereClause, _ := MarshalWhereClause(QueryCriteria{
-    PhysicalCPUCount: 4,
-})
-// whereClause will be: WHERE Physical_CPU_Count__c >= 4
-```
+   ```
+   whereClause, _ := MarshalWhereClause(QueryCriteria{
+       PhysicalCPUCount: 4,
+   })
+   // whereClause will be: WHERE Physical_CPU_Count__c >= 4
+   ```
 
 1. `lessThanOperator`: This tag is used on members which should be considered to construct field expressions in where clause using `<` comparison operator. This tag should be used on member of type `string`, `int`, `int8`, `int16`, `int32`, `int64`, `uint`, `uint8`, `uint16`, `uint32`, `uint64`, `float32`, `float64`, `bool` or `time.Time`. Used on any other type, this tag will be ignored. Example will clarify this more:
 
-```
-whereClause, _ := MarshalWhereClause(QueryCriteria{
-    AllocationLatency: 28.9,
-})
-// whereClause will be: WHERE Allocation_Latency__c < 28.9
-```
+   ```
+   whereClause, _ := MarshalWhereClause(QueryCriteria{
+       AllocationLatency: 28.9,
+   })
+   // whereClause will be: WHERE Allocation_Latency__c < 28.9
+   ```
 
 1. `lessThanOrEqualsToOperator`: This tag is used on members which should be considered to construct field expressions in where clause using `<=` comparison operator. This tag should be used on member of type `string`, `int`, `int8`, `int16`, `int32`, `int64`, `uint`, `uint8`, `uint16`, `uint32`, `uint64`, `float32`, `float64`, `bool` or `time.Time`. Used on any other type, this tag will be ignored. Example will clarify this more:
 
-```
-whereClause, _ := MarshalWhereClause(QueryCriteria{
-    PvtTestFailCount: 32,
-})
-// whereClause will be: WHERE Pvt_Test_Fail_Count__c <= 32
-```
+   ```
+   whereClause, _ := MarshalWhereClause(QueryCriteria{
+       PvtTestFailCount: 32,
+   })
+   // whereClause will be: WHERE Pvt_Test_Fail_Count__c <= 32
+   ```
 
 If there are more than one fields in the struct tagged with `whereClause` then they will be combined using `AND` logical operator. This has been demonstrated in the code snippets in [How to use](#how-to-use).
 
