@@ -93,6 +93,12 @@ type InvalidParentStruct struct {
 	ChildStruct InvalidTestChildStruct `soql:"selectChild,fieldName=Application_Versions__r"`
 }
 
+type InvalidSelectChildClause struct {
+	ID          string `soql:"selectColumn,fieldName=Id"`
+	Name        string `soql:"selectColumn,fieldName=Name__c"`
+	ChildStruct int    `soql:"selectChild,fieldName=Application_Versions__r"`
+}
+
 type ChildTagToNonStruct struct {
 	ID          string `soql:"selectColumn,fieldName=Id"`
 	Name        string `soql:"selectColumn,fieldName=Name__c"`
@@ -114,13 +120,6 @@ type OnlyWhereClause struct {
 }
 
 type EmptyStruct struct {
-}
-
-type QueryCriteriaWithInvalidTypes struct {
-	IncludeNamePattern          []bool `soql:"likeOperator,fieldName=Host_Name__c"`
-	Roles                       []int  `soql:"inOperator,fieldName=Role__r.Name"`
-	ExcludeNamePattern          []bool `soql:"notLikeOperator,fieldName=Host_Name__c"`
-	AllowNullLastDiscoveredDate string `soql:"nullOperator,fieldName=Last_Discovered_Date__c"`
 }
 
 type InvalidTagInStruct struct {
@@ -193,4 +192,8 @@ type QueryCriteriaWithMixedDataTypesAndOperators struct {
 	MajorOSVersion                   string    `soql:"equalsOperator,fieldName=Major_OS_Version__c"`
 	NumOfSuccessivePuppetRunFailures uint32    `soql:"equalsOperator,fieldName=Number_Of_Successive_Puppet_Run_Failures__c"`
 	LastRestart                      time.Time `soql:"greaterThanOperator,fieldName=Last_Restart__c"`
+}
+
+type InvalidSelectClause struct {
+	SelectClause string `soql:"selectClause,tableName=SM_Logical_Host__c"`
 }

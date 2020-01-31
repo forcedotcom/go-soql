@@ -77,7 +77,7 @@ const (
 	LessThanOrEqualsToOperator = "lessThanOrEqualsToOperator"
 )
 
-var clauseBuilderMap = map[string]func(v interface{}, fieldName string) string{
+var clauseBuilderMap = map[string]func(v interface{}, fieldName string) (string, error){
 	LikeOperator:                  buildLikeClause,
 	NotLikeOperator:               buildNotLikeClause,
 	InOperator:                    buildInClause,
@@ -107,19 +107,19 @@ var (
 	ErrMultipleWhereClause = errors.New("ErrMultipleWhereClause")
 )
 
-func buildLikeClause(v interface{}, fieldName string) string {
+func buildLikeClause(v interface{}, fieldName string) (string, error) {
 	return constructLikeClause(v, fieldName, false)
 }
 
-func buildNotLikeClause(v interface{}, fieldName string) string {
+func buildNotLikeClause(v interface{}, fieldName string) (string, error) {
 	return constructLikeClause(v, fieldName, true)
 }
 
-func constructLikeClause(v interface{}, fieldName string, exclude bool) string {
+func constructLikeClause(v interface{}, fieldName string, exclude bool) (string, error) {
 	var buff strings.Builder
 	patterns, ok := v.([]string)
 	if !ok {
-		return buff.String()
+		return buff.String(), ErrInvalidTag
 	}
 	if len(patterns) > 1 {
 		buff.WriteString(openBrace)
@@ -147,10 +147,10 @@ func constructLikeClause(v interface{}, fieldName string, exclude bool) string {
 	if len(patterns) > 1 {
 		buff.WriteString(closeBrace)
 	}
-	return buff.String()
+	return buff.String(), nil
 }
 
-func buildInClause(v interface{}, fieldName string) string {
+func buildInClause(v interface{}, fieldName string) (string, error) {
 	var buff strings.Builder
 	var items []string
 	useSingleQuotes := false
@@ -166,7 +166,7 @@ func buildInClause(v interface{}, fieldName string) string {
 			items = append(items, item.Format(DateFormat))
 		}
 	default:
-		return buff.String()
+		return buff.String(), ErrInvalidTag
 	}
 
 	if len(items) > 0 {
@@ -189,34 +189,34 @@ func buildInClause(v interface{}, fieldName string) string {
 	if len(items) > 0 {
 		buff.WriteString(closeBrace)
 	}
-	return buff.String()
+	return buff.String(), nil
 }
 
-func buildNotEqualsClause(v interface{}, fieldName string) string {
+func buildNotEqualsClause(v interface{}, fieldName string) (string, error) {
 	return constructComparisonClause(v, fieldName, notEqualsOperator)
 }
 
-func buildEqualsClause(v interface{}, fieldName string) string {
+func buildEqualsClause(v interface{}, fieldName string) (string, error) {
 	return constructComparisonClause(v, fieldName, equalsOperator)
 }
 
-func buildGreaterThanClause(v interface{}, fieldName string) string {
+func buildGreaterThanClause(v interface{}, fieldName string) (string, error) {
 	return constructComparisonClause(v, fieldName, greaterThanOperator)
 }
 
-func buildGreaterThanOrEqualsToClause(v interface{}, fieldName string) string {
+func buildGreaterThanOrEqualsToClause(v interface{}, fieldName string) (string, error) {
 	return constructComparisonClause(v, fieldName, greaterThanOrEqualsToOperator)
 }
 
-func buildLessThanClause(v interface{}, fieldName string) string {
+func buildLessThanClause(v interface{}, fieldName string) (string, error) {
 	return constructComparisonClause(v, fieldName, lessThanOperator)
 }
 
-func buildLessThanOrEqualsToClause(v interface{}, fieldName string) string {
+func buildLessThanOrEqualsToClause(v interface{}, fieldName string) (string, error) {
 	return constructComparisonClause(v, fieldName, lessThanOrEqualsToOperator)
 }
 
-func constructComparisonClause(v interface{}, fieldName, operator string) string {
+func constructComparisonClause(v interface{}, fieldName, operator string) (string, error) {
 	var buff strings.Builder
 	var value string
 	useSingleQuotes := false
@@ -230,7 +230,7 @@ func constructComparisonClause(v interface{}, fieldName, operator string) string
 	case time.Time:
 		value = u.Format(DateFormat)
 	default:
-		return buff.String()
+		return buff.String(), ErrInvalidTag
 	}
 
 	if value != "" {
@@ -244,23 +244,24 @@ func constructComparisonClause(v interface{}, fieldName, operator string) string
 			buff.WriteString(singleQuote)
 		}
 	}
-	return buff.String()
+	return buff.String(), nil
 }
 
-func buildNullClause(v interface{}, fieldName string) string {
+func buildNullClause(v interface{}, fieldName string) (string, error) {
 	reflectedValue, _, err := getReflectedValueAndType(v)
 	if err == ErrNilValue {
-		return ""
+		// Not an error case because nil value for *bool is valid
+		return "", nil
 	}
 	val := reflectedValue.Interface()
 	allowNull, ok := val.(bool)
 	if !ok {
-		return ""
+		return "", ErrInvalidTag
 	}
 	if allowNull {
-		return fieldName + equalsOperator + null
+		return fieldName + equalsOperator + null, nil
 	}
-	return fieldName + notEqualsOperator + null
+	return fieldName + notEqualsOperator + null, nil
 }
 
 func getReflectedValueAndType(v interface{}) (reflect.Value, reflect.Type, error) {
@@ -302,7 +303,10 @@ func marshalWhereClause(v interface{}, tableName string) (string, error) {
 		if tableName != "" {
 			columnName = tableName + period + fieldName
 		}
-		partialClause := fn(field.Interface(), columnName)
+		partialClause, err := fn(field.Interface(), columnName)
+		if err != nil {
+			return "", err
+		}
 		if partialClause != "" {
 			if previousConditionExists {
 				buff.WriteString(andCondition)
@@ -497,6 +501,8 @@ func MarshalSelectClause(v interface{}, relationShipName string) (string, error)
 			}
 			buff.WriteString(comma)
 		}
+	} else {
+		return "", ErrInvalidTag
 	}
 	return strings.TrimRight(buff.String(), comma), nil
 }

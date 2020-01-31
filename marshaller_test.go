@@ -481,11 +481,43 @@ var _ = Describe("Marshaller", func() {
 				})
 			})
 
-			Context("when struct has invalid types", func() {
-				It("returns empty string", func() {
-					str, err := MarshalWhereClause(QueryCriteriaWithInvalidTypes{})
-					Expect(err).ToNot(HaveOccurred())
-					Expect(str).To(BeEmpty())
+			Context("when struct has invalid type for likeOperator", func() {
+				type QueryCriteriaWithInvalidLikeOperator struct {
+					IncludeNamePattern []bool `soql:"likeOperator,fieldName=Host_Name__c"`
+				}
+				It("returns error", func() {
+					_, err := MarshalWhereClause(QueryCriteriaWithInvalidLikeOperator{})
+					Expect(err).To(Equal(ErrInvalidTag))
+				})
+			})
+
+			Context("when struct has invalid type for likeOperator", func() {
+				type QueryCriteriaWithInvalidNotLikeOperator struct {
+					ExcludeNamePattern []bool `soql:"notLikeOperator,fieldName=Host_Name__c"`
+				}
+				It("returns error", func() {
+					_, err := MarshalWhereClause(QueryCriteriaWithInvalidNotLikeOperator{})
+					Expect(err).To(Equal(ErrInvalidTag))
+				})
+			})
+
+			Context("when struct has invalid type for inOperator", func() {
+				type QueryCriteriaWithInvalidInOperator struct {
+					Roles int `soql:"inOperator,fieldName=Role__c"`
+				}
+				It("returns error", func() {
+					_, err := MarshalWhereClause(QueryCriteriaWithInvalidInOperator{})
+					Expect(err).To(Equal(ErrInvalidTag))
+				})
+			})
+
+			Context("when struct has invalid type for comparison operators", func() {
+				type QueryCriteriaWithInvalidComparisonOperator struct {
+					Roles []int `soql:"lessThanOperator,fieldName=Role__c"`
+				}
+				It("returns error", func() {
+					_, err := MarshalWhereClause(QueryCriteriaWithInvalidComparisonOperator{})
+					Expect(err).To(Equal(ErrInvalidTag))
 				})
 			})
 		})
@@ -596,6 +628,13 @@ var _ = Describe("Marshaller", func() {
 					It("returns error", func() {
 						_, err := MarshalSelectClause(InvalidParentStruct{}, "")
 						Expect(err).To(Equal(ErrNoSelectClause))
+					})
+				})
+
+				Context("when selectChild is used on non struct member", func() {
+					It("returns error", func() {
+						_, err := MarshalSelectClause(InvalidSelectChildClause{}, "")
+						Expect(err).To(Equal(ErrInvalidTag))
 					})
 				})
 
@@ -733,6 +772,16 @@ var _ = Describe("Marshaller", func() {
 
 			It("returns error", func() {
 				Expect(err).To(Equal(ErrMultipleSelectClause))
+			})
+		})
+
+		Context("when selectClause is used on non struct members", func() {
+			BeforeEach(func() {
+				soqlStruct = InvalidSelectClause{}
+			})
+
+			It("returns error", func() {
+				Expect(err).To(Equal(ErrInvalidTag))
 			})
 		})
 
