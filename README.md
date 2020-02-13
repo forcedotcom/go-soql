@@ -4,7 +4,9 @@ This package supports marshalling a golang struct into SOQL. Like `json` tags, t
 
 ## Introduction
 
-Please refer to [introduction](./docs/introduction.md) to understand the basics. Once you read through it you can refer to documentation below that covers features of this repo in more depth.
+Please refer to [introduction](./docs/introduction.md) to understand the basics. This blog [post](https://developer.salesforce.com/blogs/2020/02/soql-tags-for-golang.html) also captures basics in little more detail.
+
+Once you read through it you can refer to documentation below that covers features of this repo in more depth.
 
 ## How to use
 
