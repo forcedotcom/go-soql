@@ -36,6 +36,9 @@ const (
 	selectKeyword                 = "SELECT "
 	whereKeyword                  = " WHERE "
 	fromKeyword                   = " FROM "
+	orderByKeyword                = " ORDER BY "
+	ascKeyword                    = " ASC"
+	descKeyword                   = " DESC"
 
 	// DateFormat is the golang reference time in the soql dateTime fields format
 	DateFormat = "2006-01-02T15:04:05.000-0700"
@@ -53,8 +56,12 @@ const (
 	SelectChild = "selectChild"
 	// FieldName is the parameter to be used to specify the name of the field in underlying SOQL object
 	FieldName = "fieldName"
+	// OrderByColumn is the tag to be used to specify a column in order by clause
+	OrderByColumn = "orderByColumn"
 	// WhereClause is the tag to be used when marking the struct to be considered for where clause
 	WhereClause = "whereClause"
+	// OrderByClause is the tag to be used when marking the struct to be considered for order by clause
+	OrderByClause = "orderByClause"
 	// LikeOperator is the tag to be used for "like" operator in where clause
 	LikeOperator = "likeOperator"
 	// NotLikeOperator is the tag to be used for "not like" operator in where clause
@@ -75,6 +82,8 @@ const (
 	LessThanOperator = "lessThanOperator"
 	// LessThanOrEqualsToOperator is the tag to be used for "<=" operator in where clause
 	LessThanOrEqualsToOperator = "lessThanOrEqualsToOperator"
+	// Order is the parameter to be used to specify the ordering on the column in the order by clause
+	Order = "order"
 )
 
 var clauseBuilderMap = map[string]func(v interface{}, fieldName string) (string, error){
@@ -105,6 +114,9 @@ var (
 
 	// ErrMultipleWhereClause error is returned when there are multiple whereClause in struct
 	ErrMultipleWhereClause = errors.New("ErrMultipleWhereClause")
+
+	// ErrMultipleOrderByClause error is returned when there are multiple orderByClause in struct
+	ErrMultipleOrderByClause = errors.New("ErrMultipleOrderByClause")
 )
 
 func buildLikeClause(v interface{}, fieldName string) (string, error) {
@@ -279,6 +291,65 @@ func getReflectedValueAndType(v interface{}) (reflect.Value, reflect.Type, error
 	return reflectedValue, reflectedType, nil
 }
 
+func marshalOrderByClause(v interface{}, tableName string) (string, error) {
+	var buff strings.Builder
+	reflectedValue, reflectedType, err := getReflectedValueAndType(v)
+	if err != nil {
+		return "", err
+	}
+	previousConditionExists := false
+	for i := 0; i < reflectedValue.NumField(); i++ {
+		fieldType := reflectedType.Field(i)
+		clauseTag := fieldType.Tag.Get(SoqlTag)
+		clauseKey := getClauseKey(clauseTag)
+		if clauseKey != OrderByColumn {
+			return "", ErrInvalidTag
+		}
+		order := getOrder(clauseTag, ascKeyword)
+		if order == "" {
+			return "", ErrInvalidTag
+		}
+		fieldName := getFieldName(clauseTag, fieldType.Name)
+		if fieldName == "" {
+			return "", ErrInvalidTag
+		}
+		columnName := fieldName
+		if tableName != "" {
+			columnName = tableName + period + fieldName
+		}
+		partialClause := columnName + order
+		if previousConditionExists {
+			buff.WriteString(comma)
+		}
+		buff.WriteString(partialClause)
+		previousConditionExists = true
+	}
+	return buff.String(), nil
+}
+
+// MarshalOrderByClause returns the string with all columns that apply to the SOQL order by clause.
+// As part of soql tag, you can specify the order (ASC or DESC) through the order parameter, then
+// specify the name of the field using fieldName parameter.
+// ASC is the default order if order parameter is not specified.
+// Consider following go struct
+// type TestOrderBy struct {
+// 	HostName          string  `soql:"orderByColumn,order=DESC,fieldName=Host_Name__c"`
+// 	RoleName          string  `soql:"orderByColumn,order=ASC,fieldName=Role__r.Name"`
+//  NumOfCPUCores     int     `soql:"orderByColumn,fieldName=Num_of_CPU_Cores__c"`
+// }
+// allowNull := false
+// t := TestOrderBy{}
+// orderByClause, err := MarshalOrderByClause(t)
+// if err  != nil {
+//		log.Warn("Error in marshaling order by clause")
+// }
+// fmt.Println(orderByClause)
+// This will print the orderByClause as:
+// Host_Name__c DESC,Role__r.Name ASC,Num_of_CPU_Cores__c ASC
+func MarshalOrderByClause(v interface{}) (string, error) {
+	return marshalOrderByClause(v, "")
+}
+
 func marshalWhereClause(v interface{}, tableName string) (string, error) {
 	var buff strings.Builder
 	reflectedValue, reflectedType, err := getReflectedValueAndType(v)
@@ -387,6 +458,19 @@ func getFieldName(clauseTag, defaultFieldName string) string {
 
 func getTableName(clauseTag, defaultTableName string) string {
 	return getTagValue(clauseTag, TableName, defaultTableName)
+}
+
+func getOrder(clauseTag, defaultOrder string) string {
+	// if order tag is missing, default to asc just like soql
+	// if order tag is something unexpected, return empty string
+	order := strings.TrimSpace(strings.ToUpper(getTagValue(clauseTag, Order, ascKeyword)))
+	if order == strings.TrimSpace(ascKeyword) {
+		return ascKeyword
+	} else if order == strings.TrimSpace(descKeyword) {
+		return descKeyword
+	}
+
+	return ""
 }
 
 // MarshalSelectClause returns fields to be included in select clause. Child to parent and parent to child
@@ -518,8 +602,10 @@ func marshal(reflectedValue reflect.Value, reflectedType reflect.Type, childRela
 		soqlTagPresent := false
 		selectClausePresent := false
 		whereClausePresent := false
+		orderByClausePresent := false
 		var selectSubString strings.Builder
 		var whereValue interface{}
+		var orderByValue interface{}
 		tableName := ""
 		for i := 0; i < totalFields; i++ {
 			field := reflectedType.Field(i)
@@ -563,6 +649,12 @@ func marshal(reflectedValue reflect.Value, reflectedType reflect.Type, childRela
 				}
 				whereClausePresent = true
 				whereValue = reflectedValue.Field(i).Interface()
+			case OrderByClause:
+				if orderByClausePresent {
+					return "", ErrMultipleWhereClause
+				}
+				orderByClausePresent = true
+				orderByValue = reflectedValue.Field(i).Interface()
 			default:
 				return "", ErrInvalidTag
 			}
@@ -586,6 +678,21 @@ func marshal(reflectedValue reflect.Value, reflectedType reflect.Type, childRela
 			}
 			if subStr != "" {
 				buff.WriteString(whereKeyword)
+				buff.WriteString(subStr)
+			}
+		}
+		if orderByClausePresent {
+			relationName := ""
+			if childRelationName != "" {
+				// This is child struct and we should use tableName as prefix for columns in where clause
+				relationName = tableName
+			}
+			subStr, err := marshalOrderByClause(orderByValue, relationName)
+			if err != nil {
+				return "", err
+			}
+			if subStr != "" {
+				buff.WriteString(orderByKeyword)
 				buff.WriteString(subStr)
 			}
 		}

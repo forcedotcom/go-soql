@@ -15,6 +15,7 @@ Start with using `soql` tags on members of your golang structs. `soql` is the ma
 ```
     selectClause // is the tag to be used when marking the struct to be considered for select clause in soql.
     whereClause // is the tag to be used when marking the struct to be considered for where clause in soql.
+    orderByClause // is the tag to be used when marking the struct to be considered for order by clause in soql.
     selectColumn // is the tag to be used for selecting a column in select clause. It should be used on members of struct that have been tagged with selectClause.
     selectChild // is the tag to be used when selecting from child tables. It should be used on members of struct that have been tagged with selectClause.
     likeOperator // is the tag to be used for "like" operator in where clause. It should be used on members of struct that have been tagged with whereClause.
@@ -27,14 +28,15 @@ Start with using `soql` tags on members of your golang structs. `soql` is the ma
     lessThanOperator // is the tag to be used for "<" operator in where clause. It should be used on members of struct that have been tagged with whereClause.
     greaterThanOrEqualsToOperator // is the tag to be used for ">=" operator in where clause. It should be used on members of struct that have been tagged with whereClause.
     lessThanOrEqualsToOperator // is the tag to be used for "<=" operator in where clause. It should be used on members of struct that have been tagged with whereClause.
+    orderByColumn // is the tag to be used for specifying a column in order by clause. It should be used on members of struct that have been tagged with orderByClause.
 ```
 
 Following are supported parameters:
 
 ```
     fieldName // is the parameter to be used to specify the name of the field in underlying Salesforce object. It can be used with all tags listed above other than selectClause and whereClause.
-    tableName // is the parameter to be used to specify the name of the table of underlying Salesforce Object. It can be be used only with selectClause.
-
+    tableName // is the parameter to be used to specify the name of the table of underlying Salesforce Object. It can be used only with selectClause.
+    order // is the parameter to be used to specify the order of result - ascending (ASC) or descending (DESC) on a column. It can be used only with the orderByColumn tag.
 ```
 
 If `fieldName` and `tableName` parameters are not provided then the name of the field will be used as default.
@@ -45,8 +47,9 @@ Lets take a look at one example of a simple non-nested struct and how it can be 
 
 ```
 type TestSoqlStruct struct {
-	SelectClause NonNestedStruct   `soql:"selectClause,tableName=SM_SomeObject__c"`
-	WhereClause  TestQueryCriteria `soql:"whereClause"`
+	SelectClause  NonNestedStruct   `soql:"selectClause,tableName=SM_SomeObject__c"`
+	WhereClause   TestQueryCriteria `soql:"whereClause"`
+    OrderByClause OrderByStruct     `soql:"orderByClause"`
 }
 type TestQueryCriteria struct {
 	IncludeNamePattern          []string `soql:"likeOperator,fieldName=Name__c"`
@@ -55,6 +58,9 @@ type TestQueryCriteria struct {
 type NonNestedStruct struct {
 	Name          string `soql:"selectColumn,fieldName=Name__c"`
 	SomeValue     string `soql:"selectColumn,fieldName=SomeValue__c"`
+}
+type OrderByStruct struct {
+	Name          string `soql:"orderByColumn,order=DESC,fieldName=Name__c"`
 }
 ```
 
@@ -77,7 +83,7 @@ fmt.Println(soqlQuery)
 Above struct will result in following SOQL query:
 
 ```
-SELECT Name,SomeValue__c FROM SM_SomeObject__C WHERE (Name__c LIKE '%foo%' OR Name__c LIKE '%bar%') AND Role__c IN ('admin','user')
+SELECT Name__c,SomeValue__c FROM SM_SomeObject__C WHERE (Name__c LIKE '%foo%' OR Name__c LIKE '%bar%') AND Role__c IN ('admin','user') ORDER BY Name__c ASC
 ```
 
 ### Advanced usage
@@ -176,8 +182,9 @@ This section explains top level tags used in constructing SOQL query. Following 
 
 ```
 type TestSoqlStruct struct {
-    SelectClause NonNestedStruct   `soql:"selectClause,tableName=SM_SomeObject__c"`
-    WhereClause  TestQueryCriteria `soql:"whereClause"`
+	SelectClause  NonNestedStruct   `soql:"selectClause,tableName=SM_SomeObject__c"`
+	WhereClause   TestQueryCriteria `soql:"whereClause"`
+	OrderByClause OrderByStruct     `soql:"orderByClause"`
 }
 type TestQueryCriteria struct {
     IncludeNamePattern          []string `soql:"likeOperator,fieldName=Name__c"`
@@ -187,15 +194,19 @@ type NonNestedStruct struct {
     Name          string `soql:"selectColumn,fieldName=Name__c"`
     SomeValue     string `soql:"selectColumn,fieldName=SomeValue__c"`
 }
+type OrderByStruct struct {
+	NumOfCPUCores int `soql:"orderByColumn,order=ASC,fieldName=Num_of_CPU_Cores__c"`
+}
 ```
 
 1. `selectClause`: This tag is used on the struct which should be considered for generating part of SOQL query that contains columns/fields that should be selected. It should be used only on `struct` type. If used on types other than `struct` then `ErrInvalidTag` error will be returned. This tag is associated with `tableName` parameter. It specifies the name of the table (Salesforce object) from which the columns should be selected. If not specified name of the field is used as table name (Salesforce object). In the snippet above `SelectClause` member of `TestSoqlStruct` is tagged with `selectClause` to indicate that members in `NonNestedStruct` should be considered as fields to be selected from Salesforce object `SM_SomeObject__c`.
 
 1. `whereClause`: This tag is used on the struct which encapsulates the query criteria for SOQL query. There are no parameters for this tag. In the snippet above `WhereClause` member of `TestSoqlStruct` is tagged with `whereClause` to indicate that members in `TestQueryCriteria` should be considered for generating `WHERE` clause in SOQL query. If there are more than one field in `TestQueryCriteria` struct then they will be combined using `AND` logical operator.
 
+1. `orderByClause`: This tag is used on the struct which encapsulates the columns to be used to control the order of query results. It should be used only on `struct` type. If used on types other than `struct` then `ErrInvalidTag` error will be returned. In the snippet above `OrderByClause` member of `TestSoqlStruct` is tagged with `orderByClause` to indicate that members in `OrderByStruct` should be considered as fields to be used to determine the order of query results.
 ### Second level tags
 
-This section explains the tags that should be used on members of struct tagged with `selectClause` and `whereClause`. These tags indicate how the members of the struct should be used in generating `SELECT` and `WHERE` clause.
+This section explains the tags that should be used on members of struct tagged with `selectClause`, `whereClause` and `orderByClause`. These tags indicate how the members of the struct should be used in generating `SELECT`, `WHERE` and `ORDER BY` clause.
 
 #### Tags to be used on selectClause structs
 
@@ -341,6 +352,20 @@ type QueryCriteria struct {
    ```
 
 If there are more than one fields in the struct tagged with `whereClause` then they will be combined using `AND` logical operator. This has been demonstrated in the code snippets in [Advanced usage](#advanced-usage).
+
+#### Tags to be used on orderByClause structs
+
+This section explains the list of tags that can be used on members tagged with `orderByClause`. Following snippet will be used explaining these tags:
+
+```
+type OrderByStruct struct {
+	ID          string    `soql:"orderByColumn,order=ASC,fieldName=Id"`
+	Name        string    `soql:"orderByColumn,order=DESC,fieldName=Name__c"`
+	CreatedDate time.Time `soql:"orderByColumn,fieldName=CreatedDate"`
+}
+```
+
+1. `orderByColumn`: Members that are tagged with this tag will be considered in generating the order by clause of SOQL query. This tag is associated with `fieldName` parameter. It specifies the name of the field of underlying Salesforce object. If not specified the name of the field is used as underlying Salesforce object field name. The `order` parameter controls the sort order of the result on the associated column, with the valid values being ASC (ascending) and DESC (descending). If the `order` parameter is not specified, the ordering for that column is defaulted to ascending.
 
 ## License
 

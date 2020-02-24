@@ -60,6 +60,11 @@ type TestChildStruct struct {
 	WhereClause  ChildQueryCriteria `soql:"whereClause"`
 }
 
+type TestChildOrderByStruct struct {
+	SelectClause  ChildStruct        `soql:"selectClause,tableName=SM_Application_Versions__c"`
+	OrderByClause ChildOrderByStruct `soql:"orderByClause"`
+}
+
 type ChildStruct struct {
 	Version string `soql:"selectColumn,fieldName=Version__c"`
 }
@@ -68,12 +73,23 @@ type ChildQueryCriteria struct {
 	Name string `soql:"equalsOperator,fieldName=Name__c"`
 }
 
+type ChildOrderByStruct struct {
+	Name    string `soql:"orderByColumn,order=ASC,fieldName=Name"`
+	OwnerId int    `soql:"orderByColumn,order=DESC,fieldName=OwnerId"`
+}
+
 type ParentStruct struct {
 	ID                string          `soql:"selectColumn,fieldName=Id"`
 	Name              string          `soql:"selectColumn,fieldName=Name__c"`
 	NonNestedStruct   NonNestedStruct `soql:"selectColumn,fieldName=NonNestedStruct__r"`
 	ChildStruct       TestChildStruct `soql:"selectChild,fieldName=Application_Versions__r"`
 	SomeNonSoqlMember string          `json:"some_nonsoql_member"`
+}
+
+type ParentWithOrderByStruct struct {
+	ID          string                 `soql:"selectColumn,fieldName=Id"`
+	Name        string                 `soql:"selectColumn,fieldName=Name__c"`
+	ChildStruct TestChildOrderByStruct `soql:"selectChild,fieldName=Application_Versions__r"`
 }
 
 type DefaultFieldNameParentStruct struct {
@@ -115,8 +131,17 @@ type MultipleWhereClause struct {
 	WhereClause2 ChildQueryCriteria `soql:"whereClause"`
 }
 
+type MultipleOrderByClause struct {
+	OrderByClause1 EmptyStruct `soql:"orderByClause"`
+	OrderByClause2 EmptyStruct `soql:"orderByClause"`
+}
+
 type OnlyWhereClause struct {
 	WhereClause TestQueryCriteria `soql:"whereClause"`
+}
+
+type OnlyOrderByClause struct {
+	OrderByClause EmptyStruct `soql:"orderByClause"`
 }
 
 type EmptyStruct struct {
@@ -196,4 +221,16 @@ type QueryCriteriaWithMixedDataTypesAndOperators struct {
 
 type InvalidSelectClause struct {
 	SelectClause string `soql:"selectClause,tableName=SM_Logical_Host__c"`
+}
+
+type TestSoqlOrderByStruct struct {
+	SelectClause  NestedStruct  `soql:"selectClause,tableName=SM_Logical_Host__c"`
+	OrderByClause OrderByStruct `soql:"orderByClause"`
+}
+
+type OrderByStruct struct {
+	NumOfCPUCores                    int `soql:"orderByColumn,order=ASC,fieldName=Num_of_CPU_Cores__c"`
+	PhysicalCPUCount                 int `soql:"orderByColumn,order=DESC,fieldName=Physical_CPU_Count__c"`
+	NumOfSuccessivePuppetRunFailures int `soql:"orderByColumn,fieldName=Number_Of_Successive_Puppet_Run_Failures__c"`
+	NumOfCoolanLogFiles              int `soql:"orderByColumn,order=DESC,fieldName=Num_Of_Coolan_Log_Files__c"`
 }

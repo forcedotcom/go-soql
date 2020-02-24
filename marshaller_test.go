@@ -523,6 +523,84 @@ var _ = Describe("Marshaller", func() {
 		})
 	})
 
+	Describe("MarshalOrderByClause", func() {
+		Context("when non pointer value is passed as argument", func() {
+			Context("when empty order by struct is passed", func() {
+				It("returns empty where clause", func() {
+					clause, err := MarshalWhereClause(EmptyStruct{})
+					Expect(err).ToNot(HaveOccurred())
+					Expect(clause).To(BeEmpty())
+				})
+			})
+
+			Context("when an order by struct with single order by column desc is passed", func() {
+				It("returns a column desc partial clause", func() {
+					clause, err := MarshalOrderByClause(struct {
+						NumOfCPUCores int `soql:"orderByColumn,order=DESC,fieldName=Num_of_CPU_Cores__c"`
+					}{})
+					Expect(err).ToNot(HaveOccurred())
+					Expect(clause).To(Equal("Num_of_CPU_Cores__c DESC"))
+				})
+			})
+
+			Context("when an order by struct with single order by column asc is passed", func() {
+				It("returns a column asc partial clause", func() {
+					clause, err := MarshalOrderByClause(struct {
+						NumOfCPUCores int `soql:"orderByColumn,order=ASC,fieldName=Num_of_CPU_Cores__c"`
+					}{})
+					Expect(err).ToNot(HaveOccurred())
+					Expect(clause).To(Equal("Num_of_CPU_Cores__c ASC"))
+				})
+			})
+
+			Context("when an order by struct with single order by column with no specified order is passed", func() {
+				It("returns a column asc partial clause", func() {
+					clause, err := MarshalOrderByClause(struct {
+						NumOfCPUCores int `soql:"orderByColumn,fieldName=Num_of_CPU_Cores__c"`
+					}{})
+					Expect(err).ToNot(HaveOccurred())
+					Expect(clause).To(Equal("Num_of_CPU_Cores__c ASC"))
+				})
+			})
+
+			Context("when an order by struct with multiple order by column with mixed order is passed", func() {
+				It("returns a column asc partial clause", func() {
+					clause, err := MarshalOrderByClause(struct {
+						MajorOSVersion   string    `soql:"orderByColumn,order=DESC,fieldName=Major_OS_Version__c"`
+						NumOfCPUCores    int       `soql:"orderByColumn,order=ASC,fieldName=Num_of_CPU_Cores__c"`
+						PhysicalCPUCount uint8     `soql:"orderByColumn,order=DESC,fieldName=Physical_CPU_Count__c"`
+						LastRestart      time.Time `soql:"orderByColumn,fieldName=Last_Restart__c"`
+					}{})
+					Expect(err).ToNot(HaveOccurred())
+					Expect(clause).To(Equal("Major_OS_Version__c DESC,Num_of_CPU_Cores__c ASC,Physical_CPU_Count__c DESC,Last_Restart__c ASC"))
+				})
+			})
+		})
+
+		Context("when a pointer value is passed as argument", func() {
+			Context("when empty order by struct is passed", func() {
+				It("returns empty where clause", func() {
+					clause, err := MarshalWhereClause(&EmptyStruct{})
+					Expect(err).ToNot(HaveOccurred())
+					Expect(clause).To(BeEmpty())
+				})
+			})
+
+			Context("when an order by struct with multiple order by column with mixed order is passed", func() {
+				It("returns a column asc partial clause", func() {
+					clause, err := MarshalOrderByClause(&struct {
+						MajorOSVersion   *string    `soql:"orderByColumn,order=DESC,fieldName=Major_OS_Version__c"`
+						NumOfCPUCores    *int       `soql:"orderByColumn,order=ASC,fieldName=Num_of_CPU_Cores__c"`
+						PhysicalCPUCount *uint8     `soql:"orderByColumn,order=DESC,fieldName=Physical_CPU_Count__c"`
+						LastRestart      *time.Time `soql:"orderByColumn,fieldName=Last_Restart__c"`
+					}{})
+					Expect(err).ToNot(HaveOccurred())
+					Expect(clause).To(Equal("Major_OS_Version__c DESC,Num_of_CPU_Cores__c ASC,Physical_CPU_Count__c DESC,Last_Restart__c ASC"))
+				})
+			})
+		})
+	})
+
 	Describe("MarshalSelectClause", func() {
 		Context("when non pointer value is passed as argument", func() {
 			Context("when no relationship name is passed", func() {
@@ -864,6 +942,54 @@ var _ = Describe("Marshaller", func() {
 			It("uses name of the field as table name and returns properly constructed soql query", func() {
 				Expect(err).ToNot(HaveOccurred())
 				Expect(actualQuery).To(Equal(expectedQuery))
+			})
+		})
+
+		Context("when struct with multiple orderByClause is passed", func() {
+			BeforeEach(func() {
+				soqlStruct = MultipleOrderByClause{}
+			})
+
+			It("returns error", func() {
+				Expect(err).To(HaveOccurred())
+			})
+		})
+
+		Context("when struct with only orderByClause is passed", func() {
+			BeforeEach(func() {
+				soqlStruct = OnlyOrderByClause{}
+			})
+
+			It("returns error", func() {
+				Expect(err).To(Equal(ErrNoSelectClause))
+			})
+		})
+
+		Context("when a struct with mixed order by columns at top query level is passed", func() {
+			BeforeEach(func() {
+				soqlStruct = TestSoqlOrderByStruct{}
+			})
+
+			It("returns error", func() {
+				Expect(err).ToNot(HaveOccurred())
+				Expect(actualQuery).To(Equal("SELECT Id,Name__c,NonNestedStruct__r.Name,NonNestedStruct__r.SomeValue__c FROM SM_Logical_Host__c ORDER BY Num_of_CPU_Cores__c ASC,Physical_CPU_Count__c DESC,Number_Of_Successive_Puppet_Run_Failures__c ASC,Num_Of_Coolan_Log_Files__c DESC"))
+			})
+		})
+
+		Context("when struct with orderByClause inside a parent-to-child relationship is passed", func() {
+			BeforeEach(func() {
+				soqlStruct = struct {
+					SelectClause ParentWithOrderByStruct `soql:"selectClause,tableName=SM_Logical_Host__c"`
+				}{
+					SelectClause: ParentWithOrderByStruct{
+						ChildStruct: TestChildOrderByStruct{},
+					},
+				}
+			})
+
+			It("returns properly constructed soql query", func() {
+				Expect(err).ToNot(HaveOccurred())
+				Expect(actualQuery).To(Equal("SELECT Id,Name__c,(SELECT SM_Application_Versions__c.Version__c FROM Application_Versions__r ORDER BY SM_Application_Versions__c.Name ASC,SM_Application_Versions__c.OwnerId DESC) FROM SM_Logical_Host__c"))
 			})
 		})
 	})
