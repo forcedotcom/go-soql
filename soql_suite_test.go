@@ -12,6 +12,8 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+
+	. "github.com/forcedotcom/go-soql"
 )
 
 func TestSoql(t *testing.T) {
@@ -115,8 +117,17 @@ type MultipleWhereClause struct {
 	WhereClause2 ChildQueryCriteria `soql:"whereClause"`
 }
 
+type MultipleOrderByClause struct {
+	OrderByClause1 []Order `soql:"orderByClause"`
+	OrderByClause2 []Order `soql:"orderByClause"`
+}
+
 type OnlyWhereClause struct {
 	WhereClause TestQueryCriteria `soql:"whereClause"`
+}
+
+type OnlyOrderByClause struct {
+	OrderByClause []Order `soql:"orderByClause"`
 }
 
 type EmptyStruct struct {
@@ -196,4 +207,9 @@ type QueryCriteriaWithMixedDataTypesAndOperators struct {
 
 type InvalidSelectClause struct {
 	SelectClause string `soql:"selectClause,tableName=SM_Logical_Host__c"`
+}
+
+type TestSoqlOrderByStruct struct {
+	SelectClause  NestedStruct `soql:"selectClause,tableName=SM_Logical_Host__c"`
+	OrderByClause []Order      `soql:"orderByClause"`
 }
