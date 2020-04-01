@@ -15,6 +15,7 @@ Start with using `soql` tags on members of your golang structs. `soql` is the ma
 ```
     selectClause // is the tag to be used when marking the struct to be considered for select clause in soql.
     whereClause // is the tag to be used when marking the struct to be considered for where clause in soql.
+    orderByClause // is the tag to be used when marking the Order slice to be considered for order by clause in soql.
     selectColumn // is the tag to be used for selecting a column in select clause. It should be used on members of struct that have been tagged with selectClause.
     selectChild // is the tag to be used when selecting from child tables. It should be used on members of struct that have been tagged with selectClause.
     likeOperator // is the tag to be used for "like" operator in where clause. It should be used on members of struct that have been tagged with whereClause.
@@ -45,8 +46,9 @@ Lets take a look at one example of a simple non-nested struct and how it can be 
 
 ```
 type TestSoqlStruct struct {
-	SelectClause NonNestedStruct   `soql:"selectClause,tableName=SM_SomeObject__c"`
-	WhereClause  TestQueryCriteria `soql:"whereClause"`
+	SelectClause  NonNestedStruct   `soql:"selectClause,tableName=SM_SomeObject__c"`
+	WhereClause   TestQueryCriteria `soql:"whereClause"`
+    OrderByClause []Order           `soql:"orderByClause"`
 }
 type TestQueryCriteria struct {
 	IncludeNamePattern          []string `soql:"likeOperator,fieldName=Name__c"`
@@ -65,7 +67,8 @@ soqlStruct := TestSoqlStruct{
     WhereClause: TestQueryCriteria {
         IncludeNamePattern: []string{"foo", "bar"},
         Roles: []string{"admin", "user"},
-    }
+    },
+    OrderByClause: []Order{Order{Field:"Name", IsDesc:true}}
 }
 soqlQuery, err := Marshal(soqlStruct)
 if err != nil {
@@ -77,7 +80,7 @@ fmt.Println(soqlQuery)
 Above struct will result in following SOQL query:
 
 ```
-SELECT Name,SomeValue__c FROM SM_SomeObject__C WHERE (Name__c LIKE '%foo%' OR Name__c LIKE '%bar%') AND Role__c IN ('admin','user')
+SELECT Name__c,SomeValue__c FROM SM_SomeObject__C WHERE (Name__c LIKE '%foo%' OR Name__c LIKE '%bar%') AND Role__c IN ('admin','user') ORDER BY Name__c DESC
 ```
 
 ### Advanced usage
@@ -341,6 +344,50 @@ type QueryCriteria struct {
    ```
 
 If there are more than one fields in the struct tagged with `whereClause` then they will be combined using `AND` logical operator. This has been demonstrated in the code snippets in [Advanced usage](#advanced-usage).
+
+#### The Order struct and orderByClause
+
+This section explains the Order struct to be used for the `orderByClause`.
+
+```
+type Order struct {
+	Field string
+	IsDesc bool
+}
+```
+
+The `Order` struct is part of this library and has two fields, `Field` which is of type string and `IsDesc` of type bool. Each struct represents a column from the select column list that should be included in the `ORDER BY` clause, as well as the sort order on that column. The value of `Field` should be the name of the struct field with the `selectColumn` tag, and set `IsDesc` to `true` to specify the sort order on that column as `DESC` (set it to `false` for `ASC`). Create a slice of `Order` structs and tag it with the `orderByClause` soql tag to define the `ORDER BY` clause. Using the following `NestedStruct` as an example of the `selectClause`:
+
+```
+type NonNestedStruct struct {
+	Name          string `soql:"selectColumn,fieldName=Name"`
+	SomeValue     string `soql:"selectColumn,fieldName=SomeValue__c"`
+	NonSoqlStruct NonSoqlStruct
+}
+
+type NestedStruct struct {
+	ID              string          `soql:"selectColumn,fieldName=Id"`
+	Name            string          `soql:"selectColumn,fieldName=Name__c"`
+	NonNestedStruct NonNestedStruct `soql:"selectColumn,fieldName=NonNestedStruct__r"`
+}
+```
+
+To order the query results using the `Name__c` field of the NestedStruct in `ASC` order and `SomeValue__c` of the `NonNestedStruct` field in `DESC` order, the following `Order` slice should be used:
+
+```
+order := []Order{Order{Field:"Name",IsDesc:false},Order{Field:"NonNestedStruct.SomeValue",IsDesc:true}}
+```
+
+To specify fields in nested structs, use the `<parent>.<field>` dot notation.
+
+The final soql query struct would look like:
+
+```
+type TestSoqlStruct struct {
+    SelectClause  NestedStruct   `soql:"selectClause,tableName=SM_SomeObject__c"`
+    OrderByClause []Order        `soql:"orderByClause"`
+}
+```
 
 ## License
 

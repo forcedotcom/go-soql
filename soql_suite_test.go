@@ -12,6 +12,8 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+
+	. "github.com/forcedotcom/go-soql"
 )
 
 func TestSoql(t *testing.T) {
@@ -60,6 +62,11 @@ type TestChildStruct struct {
 	WhereClause  ChildQueryCriteria `soql:"whereClause"`
 }
 
+type TestChildWithOrderByStruct struct {
+	SelectClause  ChildStruct `soql:"selectClause,tableName=SM_Application_Versions__c"`
+	OrderByClause []Order     `soql:"orderByClause"`
+}
+
 type ChildStruct struct {
 	Version string `soql:"selectColumn,fieldName=Version__c"`
 }
@@ -74,6 +81,12 @@ type ParentStruct struct {
 	NonNestedStruct   NonNestedStruct `soql:"selectColumn,fieldName=NonNestedStruct__r"`
 	ChildStruct       TestChildStruct `soql:"selectChild,fieldName=Application_Versions__r"`
 	SomeNonSoqlMember string          `json:"some_nonsoql_member"`
+}
+
+type OrderByParentStruct struct {
+	ID          string                     `soql:"selectColumn,fieldName=Id"`
+	Name        string                     `soql:"selectColumn,fieldName=Name__c"`
+	ChildStruct TestChildWithOrderByStruct `soql:"selectChild,fieldName=Application_Versions__r"`
 }
 
 type DefaultFieldNameParentStruct struct {
@@ -115,8 +128,17 @@ type MultipleWhereClause struct {
 	WhereClause2 ChildQueryCriteria `soql:"whereClause"`
 }
 
+type MultipleOrderByClause struct {
+	OrderByClause1 []Order `soql:"orderByClause"`
+	OrderByClause2 []Order `soql:"orderByClause"`
+}
+
 type OnlyWhereClause struct {
 	WhereClause TestQueryCriteria `soql:"whereClause"`
+}
+
+type OnlyOrderByClause struct {
+	OrderByClause []Order `soql:"orderByClause"`
 }
 
 type EmptyStruct struct {
@@ -196,4 +218,14 @@ type QueryCriteriaWithMixedDataTypesAndOperators struct {
 
 type InvalidSelectClause struct {
 	SelectClause string `soql:"selectClause,tableName=SM_Logical_Host__c"`
+}
+
+type TestSoqlOrderByStruct struct {
+	SelectClause  NestedStruct `soql:"selectClause,tableName=SM_Logical_Host__c"`
+	OrderByClause []Order      `soql:"orderByClause"`
+}
+
+type TestSoqlChildRelationOrderByStruct struct {
+	SelectClause  OrderByParentStruct `soql:"selectClause,tableName=SM_Logical_Host__c"`
+	OrderByClause []Order             `soql:"orderByClause"`
 }
