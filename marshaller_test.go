@@ -1020,11 +1020,53 @@ var _ = Describe("Marshaller", func() {
 					Order{Field: "Name", IsDesc: true},
 					Order{Field: "NonNestedStruct.SomeValue", IsDesc: false},
 				}}
+				expectedQuery = "SELECT Id,Name__c,NonNestedStruct__r.Name,NonNestedStruct__r.SomeValue__c FROM SM_Logical_Host__c ORDER BY Id ASC,Name__c DESC,NonNestedStruct__r.SomeValue__c ASC"
 			})
 
 			It("returns properly constructed soql query", func() {
 				Expect(err).ToNot(HaveOccurred())
-				Expect(actualQuery).To(Equal("SELECT Id,Name__c,NonNestedStruct__r.Name,NonNestedStruct__r.SomeValue__c FROM SM_Logical_Host__c ORDER BY Id ASC,Name__c DESC,NonNestedStruct__r.SomeValue__c ASC"))
+				Expect(actualQuery).To(Equal(expectedQuery))
+			})
+		})
+
+		Context("when a struct with order by inside a child relation is passed", func() {
+			BeforeEach(func() {
+				col1 := Order{Field: "Version", IsDesc: true}
+				soqlStruct = TestSoqlChildRelationOrderByStruct{
+					SelectClause: OrderByParentStruct{
+						ChildStruct: TestChildWithOrderByStruct{
+							OrderByClause: []Order{col1},
+						},
+					},
+				}
+				expectedQuery = "SELECT Id,Name__c,(SELECT SM_Application_Versions__c.Version__c FROM Application_Versions__r ORDER BY SM_Application_Versions__c.Version__c DESC) FROM SM_Logical_Host__c"
+			})
+
+			It("returns properly constructed soql query", func() {
+				Expect(err).ToNot(HaveOccurred())
+				Expect(actualQuery).To(Equal(expectedQuery))
+			})
+		})
+
+		Context("when a struct with order by clause in top level struct and child relation is passed", func() {
+			BeforeEach(func() {
+				col1 := Order{Field: "Version", IsDesc: true}
+				col2 := Order{Field: "ID", IsDesc: true}
+				col3 := Order{Field: "Name", IsDesc: false}
+				soqlStruct = TestSoqlChildRelationOrderByStruct{
+					SelectClause: OrderByParentStruct{
+						ChildStruct: TestChildWithOrderByStruct{
+							OrderByClause: []Order{col1},
+						},
+					},
+					OrderByClause: []Order{col2, col3},
+				}
+				expectedQuery = "SELECT Id,Name__c,(SELECT SM_Application_Versions__c.Version__c FROM Application_Versions__r ORDER BY SM_Application_Versions__c.Version__c DESC) FROM SM_Logical_Host__c ORDER BY Id DESC,Name__c ASC"
+			})
+
+			It("returns properly constructed soql query", func() {
+				Expect(err).ToNot(HaveOccurred())
+				Expect(actualQuery).To(Equal(expectedQuery))
 			})
 		})
 	})

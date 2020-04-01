@@ -402,7 +402,7 @@ func marshalOrderByClause(v interface{}, tableName string, s interface{}) (strin
 		}
 
 		if tableName != "" {
-			columnName = tableName + period + fieldName
+			columnName = tableName + period + columnName
 		}
 		orderString := ascKeyword
 		if order.IsDesc {
