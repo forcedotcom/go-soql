@@ -196,6 +196,8 @@ type NonNestedStruct struct {
 
 1. `whereClause`: This tag is used on the struct which encapsulates the query criteria for SOQL query. There are no parameters for this tag. In the snippet above `WhereClause` member of `TestSoqlStruct` is tagged with `whereClause` to indicate that members in `TestQueryCriteria` should be considered for generating `WHERE` clause in SOQL query. If there are more than one field in `TestQueryCriteria` struct then they will be combined using `AND` logical operator.
 
+1. `orderByClause`: This tag is used on the slice of `Order` to capture the ordering of columns and sort order. There are no parameters for this tag. Clients using this library can expose `Order` struct from this library to their users if they wish to allow users of the client to control ordering of the result.
+
 ### Second level tags
 
 This section explains the tags that should be used on members of struct tagged with `selectClause` and `whereClause`. These tags indicate how the members of the struct should be used in generating `SELECT` and `WHERE` clause.
