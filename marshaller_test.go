@@ -348,7 +348,7 @@ var _ = Describe("Marshaller", func() {
 			})
 		})
 
-		Context("when all clauses are boolean data types", func() {
+		Context("when all clauses are boolean data types(includes nil *bool)", func() {
 			var criteria QueryCriteriaWithBooleanType
 			BeforeEach(func() {
 				criteria = QueryCriteriaWithBooleanType{
@@ -359,12 +359,34 @@ var _ = Describe("Marshaller", func() {
 				expectedClause = "NUMA_Enabled__c = true AND Disable_Alerts__c = false"
 			})
 
+			It("returns properly formed clause joined by AND clause, ignores nil", func() {
+				clause, err = MarshalWhereClause(criteria)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(clause).To(Equal(expectedClause))
+			})
+		})
+
+		Context("when all clauses are boolean data types(includes non nil *bool)", func() {
+			var criteria QueryCriteriaWithBooleanType
+			BeforeEach(func() {
+				enableLogging := true
+
+				criteria = QueryCriteriaWithBooleanType{
+					NUMAEnabled:   true,
+					DisableAlerts: false,
+					EnableLogging: &enableLogging,
+				}
+
+				expectedClause = "NUMA_Enabled__c = true AND Disable_Alerts__c = false AND Enable_Logging__c = true"
+			})
+
 			It("returns properly formed clause joined by AND clause", func() {
 				clause, err = MarshalWhereClause(criteria)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(clause).To(Equal(expectedClause))
 			})
 		})
+
 
 		Context("when all clauses are date time data types", func() {
 			var criteria QueryCriteriaWithDateTimeType

@@ -252,6 +252,12 @@ func constructComparisonClause(v interface{}, fieldName, operator string) (strin
 	case string:
 		useSingleQuotes = true
 		value = u
+	case *bool:
+		if u == nil {
+			// Not an error case because nil value for *bool is valid
+			return "", nil
+		}
+		value = fmt.Sprint(*u)
 	case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64, float32, float64, bool:
 		value = fmt.Sprint(u)
 	case time.Time:

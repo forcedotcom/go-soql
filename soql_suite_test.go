@@ -189,6 +189,7 @@ type QueryCriteriaWithFloatTypes struct {
 type QueryCriteriaWithBooleanType struct {
 	NUMAEnabled   bool `soql:"equalsOperator,fieldName=NUMA_Enabled__c"`
 	DisableAlerts bool `soql:"equalsOperator,fieldName=Disable_Alerts__c"`
+	EnableLogging *bool `soql:"equalsOperator,fieldName=Enable_Logging__c"`
 }
 
 type QueryCriteriaWithDateTimeType struct {
