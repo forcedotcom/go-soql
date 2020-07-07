@@ -10,6 +10,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -37,6 +38,7 @@ const (
 	whereKeyword                  = " WHERE "
 	fromKeyword                   = " FROM "
 	orderByKeyword                = " ORDER BY "
+	limitKeyword                  = " LIMIT "
 	ascKeyword                    = " ASC"
 	descKeyword                   = " DESC"
 
@@ -60,6 +62,8 @@ const (
 	WhereClause = "whereClause"
 	// OrderByClause is the tag to be used when marking the string slice to be considered for order by clause
 	OrderByClause = "orderByClause"
+	// LimitClause is the tag to be used when marking the string slice to be considered for limit clause
+	LimitClause = "limitClause"
 	// LikeOperator is the tag to be used for "like" operator in where clause
 	LikeOperator = "likeOperator"
 	// NotLikeOperator is the tag to be used for "not like" operator in where clause
@@ -120,6 +124,12 @@ var (
 	// ErrInvalidSelectColumnOrderByClause error is returned when the selectColumn
 	// associated with the order by clause is invalid
 	ErrInvalidSelectColumnOrderByClause = errors.New("ErrInvalidSelectColumnOrderByClause")
+
+	// ErrInvalidLimitClause error is returned when field with limitClause tag is invalid
+	ErrInvalidLimitClause = errors.New("ErrInvalidLimitClause")
+
+	// ErrMultipleLimitClause error is returned when there are multiple limitClause in struct
+	ErrMultipleLimitClause = errors.New("ErrMultipleLimitClause")
 )
 
 // Order is the struct for defining the order by clause on a per column basis
@@ -419,6 +429,24 @@ func marshalOrderByClause(v interface{}, tableName string, s interface{}) (strin
 
 }
 
+// v is the limit value provided
+func marshalLimitClause(v interface{}) (string, error) {
+	limit, ok := v.(int)
+	if !ok {
+		return "", ErrInvalidLimitClause
+	}
+	if limit < 0 {
+		return "", ErrInvalidLimitClause
+	}
+
+	var buff strings.Builder
+	if limit > 0 {
+		limitString := strconv.Itoa(limit)
+		buff.WriteString(limitString)
+	}
+	return buff.String(), nil
+}
+
 // MarshalOrderByClause returns a string representing the SOQL order by clause.
 // Parameter v is a slice of the Order struct indicating the fields from
 // parameter s, which is the value of the select column struct, that should be
@@ -688,10 +716,12 @@ func marshal(reflectedValue reflect.Value, reflectedType reflect.Type, childRela
 		selectClausePresent := false
 		whereClausePresent := false
 		orderByClausePresent := false
+		limitClausePresent := false
 		var selectSubString strings.Builder
 		var selectValue interface{}
 		var whereValue interface{}
 		var orderByValue interface{}
+		var limitValue interface{}
 		tableName := ""
 		for i := 0; i < totalFields; i++ {
 			field := reflectedType.Field(i)
@@ -742,6 +772,12 @@ func marshal(reflectedValue reflect.Value, reflectedType reflect.Type, childRela
 				}
 				orderByValue = reflectedValue.Field(i).Interface()
 				orderByClausePresent = true
+			case LimitClause:
+				if limitClausePresent {
+					return "", ErrMultipleLimitClause
+				}
+				limitValue = reflectedValue.Field(i).Interface()
+				limitClausePresent = true
 			default:
 				return "", ErrInvalidTag
 			}
@@ -780,6 +816,16 @@ func marshal(reflectedValue reflect.Value, reflectedType reflect.Type, childRela
 			}
 			if subStr != "" {
 				buff.WriteString(orderByKeyword)
+				buff.WriteString(subStr)
+			}
+		}
+		if limitClausePresent {
+			subStr, err := marshalLimitClause(limitValue)
+			if err != nil {
+				return "", err
+			}
+			if subStr != "" {
+				buff.WriteString(limitKeyword)
 				buff.WriteString(subStr)
 			}
 		}

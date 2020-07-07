@@ -1069,5 +1069,114 @@ var _ = Describe("Marshaller", func() {
 				Expect(actualQuery).To(Equal(expectedQuery))
 			})
 		})
+
+		Context("when a struct with limit value is passed", func() {
+			BeforeEach(func() {
+				soqlStruct = TestSoqlLimitStruct{
+					SelectClause: NestedStruct{},
+					WhereClause: TestQueryCriteria{
+						IncludeNamePattern: []string{"-db", "-dbmgmt"},
+						Roles:              []string{"db", "dbmgmt"},
+					},
+					Limit: 5,
+				}
+				expectedQuery = "SELECT Id,Name__c,NonNestedStruct__r.Name,NonNestedStruct__r.SomeValue__c FROM SM_Logical_Host__c WHERE (Host_Name__c LIKE '%-db%' OR Host_Name__c LIKE '%-dbmgmt%') AND Role__r.Name IN ('db','dbmgmt') LIMIT 5"
+			})
+
+			It("returns properly constructed soql query", func() {
+				Expect(err).ToNot(HaveOccurred())
+				Expect(actualQuery).To(Equal(expectedQuery))
+			})
+		})
+
+		Context("when a struct without limit value is passed", func() {
+			BeforeEach(func() {
+				soqlStruct = TestSoqlLimitStruct{
+					SelectClause: NestedStruct{},
+					WhereClause: TestQueryCriteria{
+						IncludeNamePattern: []string{"-db", "-dbmgmt"},
+						Roles:              []string{"db", "dbmgmt"},
+					},
+				}
+				expectedQuery = "SELECT Id,Name__c,NonNestedStruct__r.Name,NonNestedStruct__r.SomeValue__c FROM SM_Logical_Host__c WHERE (Host_Name__c LIKE '%-db%' OR Host_Name__c LIKE '%-dbmgmt%') AND Role__r.Name IN ('db','dbmgmt')"
+			})
+
+			It("returns properly constructed soql query", func() {
+				Expect(err).ToNot(HaveOccurred())
+				Expect(actualQuery).To(Equal(expectedQuery))
+			})
+		})
+
+		Context("when a struct with invalid limit value is passed", func() {
+			BeforeEach(func() {
+				soqlStruct = TestSoqlInvalidLimitStruct{
+					SelectClause: NestedStruct{},
+					WhereClause: TestQueryCriteria{
+						IncludeNamePattern: []string{"-db", "-dbmgmt"},
+						Roles:              []string{"db", "dbmgmt"},
+					},
+					Limit: "5",
+				}
+			})
+
+			It("returns error", func() {
+				Expect(err).To(Equal(ErrInvalidLimitClause))
+			})
+		})
+
+		Context("when a struct with multiple limit values is passed", func() {
+			BeforeEach(func() {
+				soqlStruct = TestSoqlMultipleLimitStruct{
+					SelectClause: NestedStruct{},
+					WhereClause: TestQueryCriteria{
+						IncludeNamePattern: []string{"-db", "-dbmgmt"},
+						Roles:              []string{"db", "dbmgmt"},
+					},
+					Limit:     5,
+					AlsoLimit: 15,
+				}
+			})
+
+			It("returns error", func() {
+				Expect(err).To(Equal(ErrMultipleLimitClause))
+			})
+		})
+
+		Context("when a struct with limit inside a child relation is passed", func() {
+			BeforeEach(func() {
+				soqlStruct = TestSoqlChildRelationLimitStruct{
+					SelectClause: ParentLimitStruct{
+						ChildStruct: ChildLimitStruct{
+							Limit: 1,
+						},
+					},
+				}
+				expectedQuery = "SELECT Id,Name__c,(SELECT Application_Versions__c.Id,Application_Versions__c.Version__c FROM Application_Versions__r LIMIT 1) FROM SM_Logical_Host__c"
+			})
+
+			It("returns properly constructed soql query", func() {
+				Expect(err).ToNot(HaveOccurred())
+				Expect(actualQuery).To(Equal(expectedQuery))
+			})
+		})
+
+		Context("when a struct with limit inside a child relation is passed", func() {
+			BeforeEach(func() {
+				soqlStruct = TestSoqlChildRelationLimitStruct{
+					SelectClause: ParentLimitStruct{
+						ChildStruct: ChildLimitStruct{
+							Limit: 10,
+						},
+					},
+					Limit: 25,
+				}
+				expectedQuery = "SELECT Id,Name__c,(SELECT Application_Versions__c.Id,Application_Versions__c.Version__c FROM Application_Versions__r LIMIT 10) FROM SM_Logical_Host__c LIMIT 25"
+			})
+
+			It("returns properly constructed soql query", func() {
+				Expect(err).ToNot(HaveOccurred())
+				Expect(actualQuery).To(Equal(expectedQuery))
+			})
+		})
 	})
 })
