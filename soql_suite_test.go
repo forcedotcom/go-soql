@@ -269,3 +269,15 @@ type TestSoqlChildRelationLimitStruct struct {
 	SelectClause ParentLimitStruct `soql:"selectClause,tableName=SM_Logical_Host__c"`
 	Limit        int               `soql:"limitClause"`
 }
+
+type TestSoqlOffsetStruct struct {
+	SelectClause NestedStruct      `soql:"selectClause,tableName=SM_Logical_Host__c"`
+	WhereClause  TestQueryCriteria `soql:"whereClause"`
+	Offset       int               `soql:"offsetClause"`
+}
+
+type TestSoqlInvalidOffsetStruct struct {
+	SelectClause NestedStruct      `soql:"selectClause,tableName=SM_Logical_Host__c"`
+	WhereClause  TestQueryCriteria `soql:"whereClause"`
+	Offset       string            `soql:"offsetClause"`
+}
