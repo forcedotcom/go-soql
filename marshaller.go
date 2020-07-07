@@ -136,6 +136,9 @@ var (
 
 	// ErrInvalidOffsetClause error is returned when field with offsetClause tag is invalid
 	ErrInvalidOffsetClause = errors.New("ErrInvalidOffsetClause")
+
+	// ErrMultipleOffsetClause error is returned when there are multiple offsetClause in struct
+	ErrMultipleOffsetClause = errors.New("ErrMultipleOffsetClause")
 )
 
 // Order is the struct for defining the order by clause on a per column basis
@@ -803,6 +806,9 @@ func marshal(reflectedValue reflect.Value, reflectedType reflect.Type, childRela
 				limitValue = reflectedValue.Field(i).Interface()
 				limitClausePresent = true
 			case OffsetClause:
+				if offsetClausePresent {
+					return "", ErrMultipleOffsetClause
+				}
 				offsetValue = reflectedValue.Field(i).Interface()
 				offsetClausePresent = true
 			default:

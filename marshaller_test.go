@@ -1250,39 +1250,39 @@ var _ = Describe("Marshaller", func() {
 			})
 		})
 
-		// Context("when a struct with invalid limit value is passed", func() {
-		// 	BeforeEach(func() {
-		// 		soqlStruct = TestSoqlLimitStruct{
-		// 			SelectClause: NestedStruct{},
-		// 			WhereClause: TestQueryCriteria{
-		// 				IncludeNamePattern: []string{"-db", "-dbmgmt"},
-		// 				Roles:              []string{"db", "dbmgmt"},
-		// 			},
-		// 			Limit: -5,
-		// 		}
-		// 	})
+		Context("when a struct with invalid offset value is passed", func() {
+			BeforeEach(func() {
+				soqlStruct = TestSoqlOffsetStruct{
+					SelectClause: NestedStruct{},
+					WhereClause: TestQueryCriteria{
+						IncludeNamePattern: []string{"-db", "-dbmgmt"},
+						Roles:              []string{"db", "dbmgmt"},
+					},
+					Offset: -5,
+				}
+			})
 
-		// 	It("returns error", func() {
-		// 		Expect(err).To(Equal(ErrInvalidLimitClause))
-		// 	})
-		// })
+			It("returns error", func() {
+				Expect(err).To(Equal(ErrInvalidOffsetClause))
+			})
+		})
 
-		// Context("when a struct with multiple limit values is passed", func() {
-		// 	BeforeEach(func() {
-		// 		soqlStruct = TestSoqlMultipleLimitStruct{
-		// 			SelectClause: NestedStruct{},
-		// 			WhereClause: TestQueryCriteria{
-		// 				IncludeNamePattern: []string{"-db", "-dbmgmt"},
-		// 				Roles:              []string{"db", "dbmgmt"},
-		// 			},
-		// 			Limit:     5,
-		// 			AlsoLimit: 15,
-		// 		}
-		// 	})
+		Context("when a struct with multiple offset values is passed", func() {
+			BeforeEach(func() {
+				soqlStruct = TestSoqlMultipleOffsetStruct{
+					SelectClause: NestedStruct{},
+					WhereClause: TestQueryCriteria{
+						IncludeNamePattern: []string{"-db", "-dbmgmt"},
+						Roles:              []string{"db", "dbmgmt"},
+					},
+					Offset:     5,
+					AlsoOffset: 15,
+				}
+			})
 
-		// 	It("returns error", func() {
-		// 		Expect(err).To(Equal(ErrMultipleLimitClause))
-		// 	})
-		// })
+			It("returns error", func() {
+				Expect(err).To(Equal(ErrMultipleOffsetClause))
+			})
+		})
 	})
 })

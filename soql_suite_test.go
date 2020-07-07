@@ -281,3 +281,10 @@ type TestSoqlInvalidOffsetStruct struct {
 	WhereClause  TestQueryCriteria `soql:"whereClause"`
 	Offset       string            `soql:"offsetClause"`
 }
+
+type TestSoqlMultipleOffsetStruct struct {
+	SelectClause NestedStruct      `soql:"selectClause,tableName=SM_Logical_Host__c"`
+	WhereClause  TestQueryCriteria `soql:"whereClause"`
+	Offset       int               `soql:"offsetClause"`
+	AlsoOffset   int               `soql:"offsetClause"`
+}
