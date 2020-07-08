@@ -63,9 +63,9 @@ const (
 	WhereClause = "whereClause"
 	// OrderByClause is the tag to be used when marking the string slice to be considered for order by clause
 	OrderByClause = "orderByClause"
-	// LimitClause is the tag to be used when marking the string slice to be considered for limit clause
+	// LimitClause is the tag to be used when marking the int to be considered for limit clause
 	LimitClause = "limitClause"
-	// OffsetClause is the tag to be used when marking the string slice to be considered for offset clause
+	// OffsetClause is the tag to be used when marking the int to be considered for offset clause
 	OffsetClause = "offsetClause"
 	// LikeOperator is the tag to be used for "like" operator in where clause
 	LikeOperator = "likeOperator"
