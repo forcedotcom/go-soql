@@ -21,6 +21,7 @@ const (
 	orCondition                   = " OR "
 	andCondition                  = " AND "
 	singleQuote                   = "'"
+	safeSingleQuote               = "\\'"
 	comma                         = ","
 	notOperator                   = "NOT "
 	openLike                      = " LIKE '%"
@@ -153,6 +154,10 @@ type Order struct {
 	IsDesc bool
 }
 
+func sanitizeString(str string) string {
+	return strings.ReplaceAll(str, singleQuote, safeSingleQuote)
+}
+
 func buildLikeClause(v interface{}, fieldName string) (string, error) {
 	return constructLikeClause(v, fieldName, false)
 }
@@ -184,7 +189,7 @@ func constructLikeClause(v interface{}, fieldName string, exclude bool) (string,
 		}
 		buff.WriteString(fieldName)
 		buff.WriteString(openLike)
-		buff.WriteString(pattern)
+		buff.WriteString(sanitizeString(pattern))
 		buff.WriteString(closeLike)
 		if exclude {
 			buff.WriteString(closeBrace)
@@ -226,10 +231,10 @@ func buildInClause(v interface{}, fieldName string) (string, error) {
 		}
 		if useSingleQuotes {
 			buff.WriteString(singleQuote)
-		}
-		buff.WriteString(item)
-		if useSingleQuotes {
+			buff.WriteString(sanitizeString(item))
 			buff.WriteString(singleQuote)
+		} else {
+			buff.WriteString(item)
 		}
 	}
 	if len(items) > 0 {
@@ -284,10 +289,10 @@ func constructComparisonClause(v interface{}, fieldName, operator string) (strin
 		buff.WriteString(operator)
 		if useSingleQuotes {
 			buff.WriteString(singleQuote)
-		}
-		buff.WriteString(value)
-		if useSingleQuotes {
+			buff.WriteString(sanitizeString(value))
 			buff.WriteString(singleQuote)
+		} else {
+			buff.WriteString(value)
 		}
 	}
 	return buff.String(), nil
