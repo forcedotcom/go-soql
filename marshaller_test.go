@@ -1070,7 +1070,7 @@ var _ = Describe("Marshaller", func() {
 			})
 		})
 
-		Context("when a struct with limit value is passed", func() {
+		Context("when a struct with limit value greater than 0 is passed", func() {
 			BeforeEach(func() {
 				soqlStruct = TestSoqlLimitStruct{
 					SelectClause: NestedStruct{},
@@ -1081,6 +1081,25 @@ var _ = Describe("Marshaller", func() {
 					Limit: 5,
 				}
 				expectedQuery = "SELECT Id,Name__c,NonNestedStruct__r.Name,NonNestedStruct__r.SomeValue__c FROM SM_Logical_Host__c WHERE (Host_Name__c LIKE '%-db%' OR Host_Name__c LIKE '%-dbmgmt%') AND Role__r.Name IN ('db','dbmgmt') LIMIT 5"
+			})
+
+			It("returns properly constructed soql query", func() {
+				Expect(err).ToNot(HaveOccurred())
+				Expect(actualQuery).To(Equal(expectedQuery))
+			})
+		})
+
+		Context("when a struct with limit value equal to 0 is passed", func() {
+			BeforeEach(func() {
+				soqlStruct = TestSoqlLimitStruct{
+					SelectClause: NestedStruct{},
+					WhereClause: TestQueryCriteria{
+						IncludeNamePattern: []string{"-db", "-dbmgmt"},
+						Roles:              []string{"db", "dbmgmt"},
+					},
+					Limit: 0,
+				}
+				expectedQuery = "SELECT Id,Name__c,NonNestedStruct__r.Name,NonNestedStruct__r.SomeValue__c FROM SM_Logical_Host__c WHERE (Host_Name__c LIKE '%-db%' OR Host_Name__c LIKE '%-dbmgmt%') AND Role__r.Name IN ('db','dbmgmt')"
 			})
 
 			It("returns properly constructed soql query", func() {
@@ -1233,6 +1252,25 @@ var _ = Describe("Marshaller", func() {
 			})
 		})
 
+		Context("when a struct with offset value of 0 is passed", func() {
+			BeforeEach(func() {
+				soqlStruct = TestSoqlOffsetStruct{
+					SelectClause: NestedStruct{},
+					WhereClause: TestQueryCriteria{
+						IncludeNamePattern: []string{"-db", "-dbmgmt"},
+						Roles:              []string{"db", "dbmgmt"},
+					},
+					Offset: 0,
+				}
+				expectedQuery = "SELECT Id,Name__c,NonNestedStruct__r.Name,NonNestedStruct__r.SomeValue__c FROM SM_Logical_Host__c WHERE (Host_Name__c LIKE '%-db%' OR Host_Name__c LIKE '%-dbmgmt%') AND Role__r.Name IN ('db','dbmgmt')"
+			})
+
+			It("returns properly constructed soql query", func() {
+				Expect(err).ToNot(HaveOccurred())
+				Expect(actualQuery).To(Equal(expectedQuery))
+			})
+		})
+
 		Context("when a struct with invalid offset type is passed", func() {
 			BeforeEach(func() {
 				soqlStruct = TestSoqlInvalidOffsetStruct{
@@ -1282,6 +1320,26 @@ var _ = Describe("Marshaller", func() {
 
 			It("returns error", func() {
 				Expect(err).To(Equal(ErrMultipleOffsetClause))
+			})
+		})
+
+		Context("when a struct with offset value and limit value is passed", func() {
+			BeforeEach(func() {
+				soqlStruct = TestSoqlLimitAndOffsetStruct{
+					SelectClause: NestedStruct{},
+					WhereClause: TestQueryCriteria{
+						IncludeNamePattern: []string{"-db", "-dbmgmt"},
+						Roles:              []string{"db", "dbmgmt"},
+					},
+					Limit:  15,
+					Offset: 5,
+				}
+				expectedQuery = "SELECT Id,Name__c,NonNestedStruct__r.Name,NonNestedStruct__r.SomeValue__c FROM SM_Logical_Host__c WHERE (Host_Name__c LIKE '%-db%' OR Host_Name__c LIKE '%-dbmgmt%') AND Role__r.Name IN ('db','dbmgmt') LIMIT 15 OFFSET 5"
+			})
+
+			It("returns properly constructed soql query", func() {
+				Expect(err).ToNot(HaveOccurred())
+				Expect(actualQuery).To(Equal(expectedQuery))
 			})
 		})
 	})

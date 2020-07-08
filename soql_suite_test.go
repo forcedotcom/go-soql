@@ -288,3 +288,10 @@ type TestSoqlMultipleOffsetStruct struct {
 	Offset       int               `soql:"offsetClause"`
 	AlsoOffset   int               `soql:"offsetClause"`
 }
+
+type TestSoqlLimitAndOffsetStruct struct {
+	SelectClause NestedStruct      `soql:"selectClause,tableName=SM_Logical_Host__c"`
+	WhereClause  TestQueryCriteria `soql:"whereClause"`
+	Limit        int               `soql:"limitClause"`
+	Offset       int               `soql:"offsetClause"`
+}
