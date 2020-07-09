@@ -65,6 +65,19 @@ var _ = Describe("Marshaller", func() {
 						Expect(clause).To(Equal(expectedClause))
 					})
 				})
+
+				Context("when there is single quote in values", func() {
+					BeforeEach(func() {
+						critetria = TestQueryCriteria{
+							IncludeNamePattern: []string{"-db'", "-dbmgmt", "-dgdb"},
+						}
+						expectedClause = "(Host_Name__c LIKE '%-db\\'%' OR Host_Name__c LIKE '%-dbmgmt%' OR Host_Name__c LIKE '%-dgdb%')"
+					})
+
+					It("returns appropriate where clause by escaping single quote", func() {
+						Expect(clause).To(Equal(expectedClause))
+					})
+				})
 			})
 
 			Context("when only not like clause is populated", func() {
@@ -93,6 +106,19 @@ var _ = Describe("Marshaller", func() {
 						Expect(clause).To(Equal(expectedClause))
 					})
 				})
+
+				Context("when there is single quote in values", func() {
+					BeforeEach(func() {
+						critetria = TestQueryCriteria{
+							ExcludeNamePattern: []string{"-d'b"},
+						}
+						expectedClause = "(NOT Host_Name__c LIKE '%-d\\'b%')"
+					})
+
+					It("returns appropriate where clause by escaping single quote", func() {
+						Expect(clause).To(Equal(expectedClause))
+					})
+				})
 			})
 
 			Context("when only equalsClause is populated", func() {
@@ -106,6 +132,19 @@ var _ = Describe("Marshaller", func() {
 				It("returns appropriate where clause", func() {
 					Expect(clause).To(Equal(expectedClause))
 				})
+
+				Context("when value has single quote", func() {
+					BeforeEach(func() {
+						critetria = TestQueryCriteria{
+							AssetType: "SER'VER",
+						}
+						expectedClause = "Tech_Asset__r.Asset_Type_Asset_Type__c = 'SER\\'VER'"
+					})
+
+					It("returns appropriate where clause by escaping single quote", func() {
+						Expect(clause).To(Equal(expectedClause))
+					})
+				})
 			})
 
 			Context("when only notEqualsClause is populated", func() {
@@ -118,6 +157,19 @@ var _ = Describe("Marshaller", func() {
 
 				It("returns appropriate where clause", func() {
 					Expect(clause).To(Equal(expectedClause))
+				})
+
+				Context("when value has single quote", func() {
+					BeforeEach(func() {
+						critetria = TestQueryCriteria{
+							Status: "In'Active",
+						}
+						expectedClause = "Status__c != 'In\\'Active'"
+					})
+
+					It("returns appropriate where clause by escaping single quote", func() {
+						Expect(clause).To(Equal(expectedClause))
+					})
 				})
 			})
 
@@ -142,6 +194,18 @@ var _ = Describe("Marshaller", func() {
 						expectedClause = "Role__r.Name IN ('db','dbmgmt')"
 					})
 					It("returns where clause with all the items in IN clause", func() {
+						Expect(clause).To(Equal(expectedClause))
+					})
+				})
+
+				Context("when value has single quote", func() {
+					BeforeEach(func() {
+						critetria = TestQueryCriteria{
+							Roles: []string{"db", "db'mgmt"},
+						}
+						expectedClause = "Role__r.Name IN ('db','db\\'mgmt')"
+					})
+					It("returns appropriate where clause by escaping single quote", func() {
 						Expect(clause).To(Equal(expectedClause))
 					})
 				})
@@ -826,6 +890,23 @@ var _ = Describe("Marshaller", func() {
 					},
 				}
 				expectedQuery = "SELECT Id,Name__c,NonNestedStruct__r.Name,NonNestedStruct__r.SomeValue__c FROM SM_Logical_Host__c WHERE (Host_Name__c LIKE '%-db%' OR Host_Name__c LIKE '%-dbmgmt%') AND Role__r.Name IN ('db','dbmgmt')"
+			})
+
+			It("returns properly constructed soql query", func() {
+				Expect(err).ToNot(HaveOccurred())
+				Expect(actualQuery).To(Equal(expectedQuery))
+			})
+		})
+
+		Context("when value with single quotes is passed as argument", func() {
+			BeforeEach(func() {
+				soqlStruct = TestSoqlStruct{
+					SelectClause: NestedStruct{},
+					WhereClause: TestQueryCriteria{
+						IncludeNamePattern: []string{"Blips 'n' Chitz", "Michaels"},
+					},
+				}
+				expectedQuery = "SELECT Id,Name__c,NonNestedStruct__r.Name,NonNestedStruct__r.SomeValue__c FROM SM_Logical_Host__c WHERE (Host_Name__c LIKE '%Blips \\'n\\' Chitz%' OR Host_Name__c LIKE '%Michaels%')"
 			})
 
 			It("returns properly constructed soql query", func() {
