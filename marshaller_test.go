@@ -412,6 +412,24 @@ var _ = Describe("Marshaller", func() {
 			})
 		})
 
+		Context("when all clauses are *float data types", func() {
+			var criteria QueryCriteriaWithFloatPtrTypes
+			BeforeEach(func() {
+				numCores := 16.0
+				criteria = QueryCriteriaWithFloatPtrTypes{
+					NumOfCPUCores: &numCores,
+				}
+
+				expectedClause = "Num_of_CPU_Cores__c = 16"
+			})
+
+			It("returns properly formed clause joined by skipping nil values", func() {
+				clause, err = MarshalWhereClause(criteria)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(clause).To(Equal(expectedClause))
+			})
+		})
+
 		Context("when all clauses are boolean data types", func() {
 			var criteria QueryCriteriaWithBooleanType
 			BeforeEach(func() {
@@ -424,6 +442,24 @@ var _ = Describe("Marshaller", func() {
 			})
 
 			It("returns properly formed clause joined by AND clause", func() {
+				clause, err = MarshalWhereClause(criteria)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(clause).To(Equal(expectedClause))
+			})
+		})
+
+		Context("when data type is boolean pointer", func() {
+			var criteria QueryCriteriaWithBooleanPtrType
+			BeforeEach(func() {
+				numEnabled := true
+				criteria = QueryCriteriaWithBooleanPtrType{
+					NUMAEnabled: &numEnabled,
+				}
+
+				expectedClause = "NUMA_Enabled__c = true"
+			})
+
+			It("returns properly formed clause by skipping nil values", func() {
 				clause, err = MarshalWhereClause(criteria)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(clause).To(Equal(expectedClause))
@@ -454,6 +490,7 @@ var _ = Describe("Marshaller", func() {
 			var currentTime time.Time
 			BeforeEach(func() {
 				currentTime = time.Now()
+				numHardDrives := 2
 				criteria = QueryCriteriaWithMixedDataTypesAndOperators{
 					BIOSType:                         "98.7.654a",
 					NumOfCPUCores:                    32,
@@ -466,9 +503,10 @@ var _ = Describe("Marshaller", func() {
 					MajorOSVersion:                   "20",
 					NumOfSuccessivePuppetRunFailures: 0,
 					LastRestart:                      currentTime,
+					NumHardDrives:                    &numHardDrives,
 				}
 
-				expectedClause = "BIOS_Type__c = '98.7.654a' AND Num_of_CPU_Cores__c > 32 AND NUMA_Enabled__c = true AND Pvt_Test_Fail_Count__c <= 256 AND Physical_CPU_Count__c >= 4 AND CreatedDate = " + currentTime.Format(DateFormat) + " AND Disable_Alerts__c = false AND Allocation_Latency__c < 10.5 AND Major_OS_Version__c = '20' AND Number_Of_Successive_Puppet_Run_Failures__c = 0 AND Last_Restart__c > " + currentTime.Format(DateFormat)
+				expectedClause = "BIOS_Type__c = '98.7.654a' AND Num_of_CPU_Cores__c > 32 AND NUMA_Enabled__c = true AND Pvt_Test_Fail_Count__c <= 256 AND Physical_CPU_Count__c >= 4 AND CreatedDate = " + currentTime.Format(DateFormat) + " AND Disable_Alerts__c = false AND Allocation_Latency__c < 10.5 AND Major_OS_Version__c = '20' AND Number_Of_Successive_Puppet_Run_Failures__c = 0 AND Last_Restart__c > " + currentTime.Format(DateFormat) + " AND NumHardDrives__c = 2"
 			})
 
 			It("returns properly formed clause", func() {

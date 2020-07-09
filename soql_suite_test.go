@@ -186,9 +186,19 @@ type QueryCriteriaWithFloatTypes struct {
 	PhysicalCPUCount float64 `soql:"equalsOperator,fieldName=Physical_CPU_Count__c"`
 }
 
+type QueryCriteriaWithFloatPtrTypes struct {
+	NumOfCPUCores    *float64 `soql:"equalsOperator,fieldName=Num_of_CPU_Cores__c"`
+	PhysicalCPUCount *float64 `soql:"equalsOperator,fieldName=Physical_CPU_Count__c"`
+}
+
 type QueryCriteriaWithBooleanType struct {
 	NUMAEnabled   bool `soql:"equalsOperator,fieldName=NUMA_Enabled__c"`
 	DisableAlerts bool `soql:"equalsOperator,fieldName=Disable_Alerts__c"`
+}
+
+type QueryCriteriaWithBooleanPtrType struct {
+	NUMAEnabled   *bool `soql:"equalsOperator,fieldName=NUMA_Enabled__c"`
+	DisableAlerts *bool `soql:"equalsOperator,fieldName=Disable_Alerts__c"`
 }
 
 type QueryCriteriaWithDateTimeType struct {
@@ -214,6 +224,8 @@ type QueryCriteriaWithMixedDataTypesAndOperators struct {
 	MajorOSVersion                   string    `soql:"equalsOperator,fieldName=Major_OS_Version__c"`
 	NumOfSuccessivePuppetRunFailures uint32    `soql:"equalsOperator,fieldName=Number_Of_Successive_Puppet_Run_Failures__c"`
 	LastRestart                      time.Time `soql:"greaterThanOperator,fieldName=Last_Restart__c"`
+	Memory                           *float64  `soql:"equalsOperator,fieldName=Memory__c"`
+	NumHardDrives                    *int      `soql:"equalsOperator,fieldName=NumHardDrives__c"`
 }
 
 type InvalidSelectClause struct {
