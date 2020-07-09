@@ -16,6 +16,8 @@ Start with using `soql` tags on members of your golang structs. `soql` is the ma
     selectClause // is the tag to be used when marking the struct to be considered for select clause in soql.
     whereClause // is the tag to be used when marking the struct to be considered for where clause in soql.
     orderByClause // is the tag to be used when marking the Order slice to be considered for order by clause in soql.
+    limitClause // is the tag to be used when marking the *int to be considered for limit clause in soql.
+    offsetClause // is the tag to be used when marking the *int to be considered for offset clause in soql.
     selectColumn // is the tag to be used for selecting a column in select clause. It should be used on members of struct that have been tagged with selectClause.
     selectChild // is the tag to be used when selecting from child tables. It should be used on members of struct that have been tagged with selectClause.
     likeOperator // is the tag to be used for "like" operator in where clause. It should be used on members of struct that have been tagged with whereClause.
@@ -49,6 +51,8 @@ type TestSoqlStruct struct {
 	SelectClause  NonNestedStruct   `soql:"selectClause,tableName=SM_SomeObject__c"`
 	WhereClause   TestQueryCriteria `soql:"whereClause"`
     OrderByClause []Order           `soql:"orderByClause"`
+    LimitClause   *int              `soql:"limitClause"`
+	OffsetClause  *int              `soql:"offsetClause"`
 }
 type TestQueryCriteria struct {
 	IncludeNamePattern          []string `soql:"likeOperator,fieldName=Name__c"`
@@ -63,12 +67,16 @@ type NonNestedStruct struct {
 To use above structs to create SOQL query
 
 ```
+limit := 5
+offset := 10
 soqlStruct := TestSoqlStruct{
     WhereClause: TestQueryCriteria {
         IncludeNamePattern: []string{"foo", "bar"},
         Roles: []string{"admin", "user"},
     },
-    OrderByClause: []Order{Order{Field:"Name", IsDesc:true}}
+    OrderByClause: []Order{Order{Field:"Name", IsDesc:true}},
+    LimitClause: &limit,
+    OffsetClause: &offset,
 }
 soqlQuery, err := Marshal(soqlStruct)
 if err != nil {
@@ -80,7 +88,7 @@ fmt.Println(soqlQuery)
 Above struct will result in following SOQL query:
 
 ```
-SELECT Name__c,SomeValue__c FROM SM_SomeObject__C WHERE (Name__c LIKE '%foo%' OR Name__c LIKE '%bar%') AND Role__c IN ('admin','user') ORDER BY Name__c DESC
+SELECT Name__c,SomeValue__c FROM SM_SomeObject__C WHERE (Name__c LIKE '%foo%' OR Name__c LIKE '%bar%') AND Role__c IN ('admin','user') ORDER BY Name__c DESC LIMIT 5 OFFSET 10
 ```
 
 ### Advanced usage
@@ -197,6 +205,10 @@ type NonNestedStruct struct {
 1. `whereClause`: This tag is used on the struct which encapsulates the query criteria for SOQL query. There are no parameters for this tag. In the snippet above `WhereClause` member of `TestSoqlStruct` is tagged with `whereClause` to indicate that members in `TestQueryCriteria` should be considered for generating `WHERE` clause in SOQL query. If there are more than one field in `TestQueryCriteria` struct then they will be combined using `AND` logical operator.
 
 1. `orderByClause`: This tag is used on the slice of `Order` to capture the ordering of columns and sort order. There are no parameters for this tag. Clients using this library can expose `Order` struct from this library to their users if they wish to allow users of the client to control ordering of the result.
+
+1. `limitClause`: This tag is used on the *int that describes the limit value for SOQL query. There are no parameters for this tag. Passing `nil` here will omit the `LIMIT` clause from the generated query. Passing a pointer to an integer value less than zero will cause an error.
+
+1. `offsetClause`: This tag is used on the *int that describes the offset value for SOQL query. There are no parameters for this tag. Passing `nil` here will omit the `OFFSET` clause from the generated query. Passing a pointer to an integer value less than zero will cause an error.
 
 ### Second level tags
 
