@@ -280,6 +280,10 @@ func constructComparisonClause(v interface{}, fieldName, operator string) (strin
 		value = fmt.Sprint(u)
 	case time.Time:
 		value = u.Format(DateFormat)
+	case *int, *int8, *int16, *int32, *int64, *uint, *uint8, *uint16, *uint32, *uint64, *float32, *float64, *bool:
+		if !reflect.ValueOf(u).IsNil() {
+			value = fmt.Sprint(reflect.Indirect(reflect.ValueOf(u)))
+		}
 	default:
 		return buff.String(), ErrInvalidTag
 	}
