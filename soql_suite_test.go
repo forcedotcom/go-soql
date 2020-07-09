@@ -229,3 +229,69 @@ type TestSoqlChildRelationOrderByStruct struct {
 	SelectClause  OrderByParentStruct `soql:"selectClause,tableName=SM_Logical_Host__c"`
 	OrderByClause []Order             `soql:"orderByClause"`
 }
+
+type TestSoqlLimitStruct struct {
+	SelectClause NestedStruct      `soql:"selectClause,tableName=SM_Logical_Host__c"`
+	WhereClause  TestQueryCriteria `soql:"whereClause"`
+	Limit        *int              `soql:"limitClause"`
+}
+
+type TestSoqlInvalidLimitStruct struct {
+	SelectClause NestedStruct      `soql:"selectClause,tableName=SM_Logical_Host__c"`
+	WhereClause  TestQueryCriteria `soql:"whereClause"`
+	Limit        string            `soql:"limitClause"`
+}
+
+type TestSoqlMultipleLimitStruct struct {
+	SelectClause NestedStruct      `soql:"selectClause,tableName=SM_Logical_Host__c"`
+	WhereClause  TestQueryCriteria `soql:"whereClause"`
+	Limit        *int              `soql:"limitClause"`
+	AlsoLimit    *int              `soql:"limitClause"`
+}
+
+type ParentLimitStruct struct {
+	ID          string           `soql:"selectColumn,fieldName=Id"`
+	Name        string           `soql:"selectColumn,fieldName=Name__c"`
+	ChildStruct ChildLimitStruct `soql:"selectChild,fieldName=Application_Versions__r"`
+}
+
+type ChildLimitStruct struct {
+	SelectClause TestChildLimitSelect `soql:"selectClause,tableName=Application_Versions__c"`
+	Limit        *int                 `soql:"limitClause"`
+}
+
+type TestChildLimitSelect struct {
+	ID      string `soql:"selectColumn,fieldName=Id"`
+	Version string `soql:"selectColumn,fieldName=Version__c"`
+}
+
+type TestSoqlChildRelationLimitStruct struct {
+	SelectClause ParentLimitStruct `soql:"selectClause,tableName=SM_Logical_Host__c"`
+	Limit        *int              `soql:"limitClause"`
+}
+
+type TestSoqlOffsetStruct struct {
+	SelectClause NestedStruct      `soql:"selectClause,tableName=SM_Logical_Host__c"`
+	WhereClause  TestQueryCriteria `soql:"whereClause"`
+	Offset       *int              `soql:"offsetClause"`
+}
+
+type TestSoqlInvalidOffsetStruct struct {
+	SelectClause NestedStruct      `soql:"selectClause,tableName=SM_Logical_Host__c"`
+	WhereClause  TestQueryCriteria `soql:"whereClause"`
+	Offset       string            `soql:"offsetClause"`
+}
+
+type TestSoqlMultipleOffsetStruct struct {
+	SelectClause NestedStruct      `soql:"selectClause,tableName=SM_Logical_Host__c"`
+	WhereClause  TestQueryCriteria `soql:"whereClause"`
+	Offset       *int              `soql:"offsetClause"`
+	AlsoOffset   *int              `soql:"offsetClause"`
+}
+
+type TestSoqlLimitAndOffsetStruct struct {
+	SelectClause NestedStruct      `soql:"selectClause,tableName=SM_Logical_Host__c"`
+	WhereClause  TestQueryCriteria `soql:"whereClause"`
+	Limit        *int              `soql:"limitClause"`
+	Offset       *int              `soql:"offsetClause"`
+}

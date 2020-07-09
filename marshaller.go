@@ -10,6 +10,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -37,6 +38,8 @@ const (
 	whereKeyword                  = " WHERE "
 	fromKeyword                   = " FROM "
 	orderByKeyword                = " ORDER BY "
+	limitKeyword                  = " LIMIT "
+	offsetKeyword                 = " OFFSET "
 	ascKeyword                    = " ASC"
 	descKeyword                   = " DESC"
 
@@ -60,6 +63,10 @@ const (
 	WhereClause = "whereClause"
 	// OrderByClause is the tag to be used when marking the string slice to be considered for order by clause
 	OrderByClause = "orderByClause"
+	// LimitClause is the tag to be used when marking the int to be considered for limit clause
+	LimitClause = "limitClause"
+	// OffsetClause is the tag to be used when marking the int to be considered for offset clause
+	OffsetClause = "offsetClause"
 	// LikeOperator is the tag to be used for "like" operator in where clause
 	LikeOperator = "likeOperator"
 	// NotLikeOperator is the tag to be used for "not like" operator in where clause
@@ -120,6 +127,18 @@ var (
 	// ErrInvalidSelectColumnOrderByClause error is returned when the selectColumn
 	// associated with the order by clause is invalid
 	ErrInvalidSelectColumnOrderByClause = errors.New("ErrInvalidSelectColumnOrderByClause")
+
+	// ErrInvalidLimitClause error is returned when field with limitClause tag is invalid
+	ErrInvalidLimitClause = errors.New("ErrInvalidLimitClause")
+
+	// ErrMultipleLimitClause error is returned when there are multiple limitClause in struct
+	ErrMultipleLimitClause = errors.New("ErrMultipleLimitClause")
+
+	// ErrInvalidOffsetClause error is returned when field with offsetClause tag is invalid
+	ErrInvalidOffsetClause = errors.New("ErrInvalidOffsetClause")
+
+	// ErrMultipleOffsetClause error is returned when there are multiple offsetClause in struct
+	ErrMultipleOffsetClause = errors.New("ErrMultipleOffsetClause")
 )
 
 // Order is the struct for defining the order by clause on a per column basis
@@ -419,6 +438,43 @@ func marshalOrderByClause(v interface{}, tableName string, s interface{}) (strin
 
 }
 
+// v is the limit value provided
+func marshalLimitClause(v interface{}) (string, error) {
+	s, err := marshalIntValue(v)
+	if err != nil {
+		return "", ErrInvalidLimitClause
+	}
+	return s, nil
+}
+
+// v is the offset value provided
+func marshalOffsetClause(v interface{}) (string, error) {
+	s, err := marshalIntValue(v)
+	if err != nil {
+		return "", ErrInvalidOffsetClause
+	}
+	return s, nil
+}
+
+func marshalIntValue(v interface{}) (string, error) {
+	vPtr, ok := v.(*int)
+	if !ok {
+		return "", errors.New("invalid type")
+	}
+	if vPtr == nil {
+		return "", nil
+	}
+
+	vInt := *vPtr
+	if vInt < 0 {
+		return "", errors.New("invalid value")
+	}
+
+	vString := strconv.Itoa(vInt)
+
+	return vString, nil
+}
+
 // MarshalOrderByClause returns a string representing the SOQL order by clause.
 // Parameter v is a slice of the Order struct indicating the fields from
 // parameter s, which is the value of the select column struct, that should be
@@ -688,10 +744,14 @@ func marshal(reflectedValue reflect.Value, reflectedType reflect.Type, childRela
 		selectClausePresent := false
 		whereClausePresent := false
 		orderByClausePresent := false
+		limitClausePresent := false
+		offsetClausePresent := false
 		var selectSubString strings.Builder
 		var selectValue interface{}
 		var whereValue interface{}
 		var orderByValue interface{}
+		var limitValue interface{}
+		var offsetValue interface{}
 		tableName := ""
 		for i := 0; i < totalFields; i++ {
 			field := reflectedType.Field(i)
@@ -742,6 +802,18 @@ func marshal(reflectedValue reflect.Value, reflectedType reflect.Type, childRela
 				}
 				orderByValue = reflectedValue.Field(i).Interface()
 				orderByClausePresent = true
+			case LimitClause:
+				if limitClausePresent {
+					return "", ErrMultipleLimitClause
+				}
+				limitValue = reflectedValue.Field(i).Interface()
+				limitClausePresent = true
+			case OffsetClause:
+				if offsetClausePresent {
+					return "", ErrMultipleOffsetClause
+				}
+				offsetValue = reflectedValue.Field(i).Interface()
+				offsetClausePresent = true
 			default:
 				return "", ErrInvalidTag
 			}
@@ -780,6 +852,26 @@ func marshal(reflectedValue reflect.Value, reflectedType reflect.Type, childRela
 			}
 			if subStr != "" {
 				buff.WriteString(orderByKeyword)
+				buff.WriteString(subStr)
+			}
+		}
+		if limitClausePresent {
+			subStr, err := marshalLimitClause(limitValue)
+			if err != nil {
+				return "", err
+			}
+			if subStr != "" {
+				buff.WriteString(limitKeyword)
+				buff.WriteString(subStr)
+			}
+		}
+		if offsetClausePresent {
+			subStr, err := marshalOffsetClause(offsetValue)
+			if err != nil {
+				return "", err
+			}
+			if subStr != "" {
+				buff.WriteString(offsetKeyword)
 				buff.WriteString(subStr)
 			}
 		}
