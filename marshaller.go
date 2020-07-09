@@ -457,18 +457,21 @@ func marshalOffsetClause(v interface{}) (string, error) {
 }
 
 func marshalIntValue(v interface{}) (string, error) {
-	vInt, ok := v.(int)
+	vPtr, ok := v.(*int)
 	if !ok {
 		return "", errors.New("invalid type")
 	}
+	if vPtr == nil {
+		return "", nil
+	}
+
+	vInt := *vPtr
 	if vInt < 0 {
 		return "", errors.New("invalid value")
 	}
 
-	var vString string
-	if vInt > 0 {
-		vString = strconv.Itoa(vInt)
-	}
+	vString := strconv.Itoa(vInt)
+
 	return vString, nil
 }
 

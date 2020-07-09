@@ -233,7 +233,7 @@ type TestSoqlChildRelationOrderByStruct struct {
 type TestSoqlLimitStruct struct {
 	SelectClause NestedStruct      `soql:"selectClause,tableName=SM_Logical_Host__c"`
 	WhereClause  TestQueryCriteria `soql:"whereClause"`
-	Limit        int               `soql:"limitClause"`
+	Limit        *int              `soql:"limitClause"`
 }
 
 type TestSoqlInvalidLimitStruct struct {
@@ -245,8 +245,8 @@ type TestSoqlInvalidLimitStruct struct {
 type TestSoqlMultipleLimitStruct struct {
 	SelectClause NestedStruct      `soql:"selectClause,tableName=SM_Logical_Host__c"`
 	WhereClause  TestQueryCriteria `soql:"whereClause"`
-	Limit        int               `soql:"limitClause"`
-	AlsoLimit    int               `soql:"limitClause"`
+	Limit        *int              `soql:"limitClause"`
+	AlsoLimit    *int              `soql:"limitClause"`
 }
 
 type ParentLimitStruct struct {
@@ -257,7 +257,7 @@ type ParentLimitStruct struct {
 
 type ChildLimitStruct struct {
 	SelectClause TestChildLimitSelect `soql:"selectClause,tableName=Application_Versions__c"`
-	Limit        int                  `soql:"limitClause"`
+	Limit        *int                 `soql:"limitClause"`
 }
 
 type TestChildLimitSelect struct {
@@ -267,13 +267,13 @@ type TestChildLimitSelect struct {
 
 type TestSoqlChildRelationLimitStruct struct {
 	SelectClause ParentLimitStruct `soql:"selectClause,tableName=SM_Logical_Host__c"`
-	Limit        int               `soql:"limitClause"`
+	Limit        *int              `soql:"limitClause"`
 }
 
 type TestSoqlOffsetStruct struct {
 	SelectClause NestedStruct      `soql:"selectClause,tableName=SM_Logical_Host__c"`
 	WhereClause  TestQueryCriteria `soql:"whereClause"`
-	Offset       int               `soql:"offsetClause"`
+	Offset       *int              `soql:"offsetClause"`
 }
 
 type TestSoqlInvalidOffsetStruct struct {
@@ -285,13 +285,13 @@ type TestSoqlInvalidOffsetStruct struct {
 type TestSoqlMultipleOffsetStruct struct {
 	SelectClause NestedStruct      `soql:"selectClause,tableName=SM_Logical_Host__c"`
 	WhereClause  TestQueryCriteria `soql:"whereClause"`
-	Offset       int               `soql:"offsetClause"`
-	AlsoOffset   int               `soql:"offsetClause"`
+	Offset       *int              `soql:"offsetClause"`
+	AlsoOffset   *int              `soql:"offsetClause"`
 }
 
 type TestSoqlLimitAndOffsetStruct struct {
 	SelectClause NestedStruct      `soql:"selectClause,tableName=SM_Logical_Host__c"`
 	WhereClause  TestQueryCriteria `soql:"whereClause"`
-	Limit        int               `soql:"limitClause"`
-	Offset       int               `soql:"offsetClause"`
+	Limit        *int              `soql:"limitClause"`
+	Offset       *int              `soql:"offsetClause"`
 }
