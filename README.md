@@ -16,6 +16,8 @@ Start with using `soql` tags on members of your golang structs. `soql` is the ma
     selectClause // is the tag to be used when marking the struct to be considered for select clause in soql.
     whereClause // is the tag to be used when marking the struct to be considered for where clause in soql.
     orderByClause // is the tag to be used when marking the Order slice to be considered for order by clause in soql.
+    limitClause // is the tag to be used when marking the *int to be considered for limit clause in soql.
+    offsetClause // is the tag to be used when marking the *int to be considered for offset clause in soql.
     selectColumn // is the tag to be used for selecting a column in select clause. It should be used on members of struct that have been tagged with selectClause.
     selectChild // is the tag to be used when selecting from child tables. It should be used on members of struct that have been tagged with selectClause.
     likeOperator // is the tag to be used for "like" operator in where clause. It should be used on members of struct that have been tagged with whereClause.
@@ -48,7 +50,9 @@ Lets take a look at one example of a simple non-nested struct and how it can be 
 type TestSoqlStruct struct {
 	SelectClause  NonNestedStruct   `soql:"selectClause,tableName=SM_SomeObject__c"`
 	WhereClause   TestQueryCriteria `soql:"whereClause"`
-    OrderByClause []Order           `soql:"orderByClause"`
+	OrderByClause []Order           `soql:"orderByClause"`
+	LimitClause   *int              `soql:"limitClause"`
+	OffsetClause  *int              `soql:"offsetClause"`
 }
 type TestQueryCriteria struct {
 	IncludeNamePattern          []string `soql:"likeOperator,fieldName=Name__c"`
@@ -63,12 +67,16 @@ type NonNestedStruct struct {
 To use above structs to create SOQL query
 
 ```
+limit := 5
+offset := 10
 soqlStruct := TestSoqlStruct{
     WhereClause: TestQueryCriteria {
         IncludeNamePattern: []string{"foo", "bar"},
         Roles: []string{"admin", "user"},
     },
-    OrderByClause: []Order{Order{Field:"Name", IsDesc:true}}
+    OrderByClause: []Order{Order{Field:"Name", IsDesc:true}},
+    LimitClause: &limit,
+    OffsetClause: &offset,
 }
 soqlQuery, err := Marshal(soqlStruct)
 if err != nil {
@@ -80,7 +88,7 @@ fmt.Println(soqlQuery)
 Above struct will result in following SOQL query:
 
 ```
-SELECT Name__c,SomeValue__c FROM SM_SomeObject__C WHERE (Name__c LIKE '%foo%' OR Name__c LIKE '%bar%') AND Role__c IN ('admin','user') ORDER BY Name__c DESC
+SELECT Name__c,SomeValue__c FROM SM_SomeObject__C WHERE (Name__c LIKE '%foo%' OR Name__c LIKE '%bar%') AND Role__c IN ('admin','user') ORDER BY Name__c DESC LIMIT 5 OFFSET 10
 ```
 
 ### Advanced usage
@@ -198,6 +206,10 @@ type NonNestedStruct struct {
 
 1. `orderByClause`: This tag is used on the slice of `Order` to capture the ordering of columns and sort order. There are no parameters for this tag. Clients using this library can expose `Order` struct from this library to their users if they wish to allow users of the client to control ordering of the result.
 
+1. `limitClause`: This tag is used on the \*int that describes the limit value for SOQL query. There are no parameters for this tag. Passing `nil` here will omit the `LIMIT` clause from the generated query. Passing a pointer to an integer value less than zero will cause an error.
+
+1. `offsetClause`: This tag is used on the \*int that describes the offset value for SOQL query. There are no parameters for this tag. Passing `nil` here will omit the `OFFSET` clause from the generated query. Passing a pointer to an integer value less than zero will cause an error.
+
 ### Second level tags
 
 This section explains the tags that should be used on members of struct tagged with `selectClause` and `whereClause`. These tags indicate how the members of the struct should be used in generating `SELECT` and `WHERE` clause.
@@ -236,16 +248,17 @@ This section explains the list of tags that can be used on members tagged with `
 
 ```
 type QueryCriteria struct {
-	IncludeNamePattern               []string  `soql:"likeOperator,fieldName=Name__c"`
-	ExcludeNamePattern               []string  `soql:"notLikeOperator,fieldName=Name__c"`
-	Roles                            []string  `soql:"inOperator,fieldName=Role__r.Name"`
-	SomeType                         string    `soql:"equalsOperator,fieldName=Some_Type__c"`
-	Status                           string    `soql:"notEqualsOperator,fieldName=Status__c"`
-	AllowNullValue                   *bool     `soql:"nullOperator,fieldName=Value__c"`
-	NumOfCPUCores                    int       `soql:"greaterThanOperator,fieldName=Num_of_CPU_Cores__c"`
-	PhysicalCPUCount                 uint8     `soql:"greaterThanOrEqualsToOperator,fieldName=Physical_CPU_Count__c"`
-	AllocationLatency                float64   `soql:"lessThanOperator,fieldName=Allocation_Latency__c"`
-	PvtTestFailCount                 int64     `soql:"lessThanOrEqualsToOperator,fieldName=Pvt_Test_Fail_Count__c"`
+	IncludeNamePattern []string `soql:"likeOperator,fieldName=Name__c"`
+	ExcludeNamePattern []string `soql:"notLikeOperator,fieldName=Name__c"`
+	Roles              []string `soql:"inOperator,fieldName=Role__r.Name"`
+	SomeType           string   `soql:"equalsOperator,fieldName=Some_Type__c"`
+	SomeBoolType       *bool    `soql:"equalsOperator,fieldName=Some_Bool_Type__c"`
+	Status             string   `soql:"notEqualsOperator,fieldName=Status__c"`
+	AllowNullValue     *bool    `soql:"nullOperator,fieldName=Value__c"`
+	NumOfCPUCores      int      `soql:"greaterThanOperator,fieldName=Num_of_CPU_Cores__c"`
+	PhysicalCPUCount   uint8    `soql:"greaterThanOrEqualsToOperator,fieldName=Physical_CPU_Count__c"`
+	AllocationLatency  float64  `soql:"lessThanOperator,fieldName=Allocation_Latency__c"`
+	PvtTestFailCount   int64    `soql:"lessThanOrEqualsToOperator,fieldName=Pvt_Test_Fail_Count__c"`
 }
 ```
 
@@ -276,7 +289,7 @@ type QueryCriteria struct {
    // whereClause will be: WHERE Role__r.Name IN ('admin','user')
    ```
 
-1. `equalsOperator`: This tag is used on members which should be considered to construct field expressions in where clause using `=` comparison operator. This tag should be used on member of type `string`, `int`, `int8`, `int16`, `int32`, `int64`, `uint`, `uint8`, `uint16`, `uint32`, `uint64`, `float32`, `float64`, `bool` or `time.Time`. Used on any other type, `ErrInvalidTag` error will be returned. Example will clarify this more:
+1. `equalsOperator`: This tag is used on members which should be considered to construct field expressions in where clause using `=` comparison operator. This tag should be used on member of type `string`, `int`, `int8`, `int16`, `int32`, `int64`, `uint`, `uint8`, `uint16`, `uint32`, `uint64`, `float32`, `float64`, `bool`, `*int`, `*int8`, `*int16`, `*int32`, `*int64`, `*uint`, `*uint8`, `*uint16`, `*uint32`, `*uint64`, `*float32`, `*float64`, `*bool` or `time.Time`. Used on any other type, `ErrInvalidTag` error will be returned. Example will clarify this more:
 
    ```
    whereClause, _ := MarshalWhereClause(QueryCriteria{
@@ -285,7 +298,18 @@ type QueryCriteria struct {
    // whereClause will be: WHERE Some_Type__c = 'SomeValue'
    ```
 
-1. `notEqualsOperator`: This tag is used on members which should be considered to construct field expressions in where clause using `!=` comparison operator. This tag should be used on member of type `string`, `int`, `int8`, `int16`, `int32`, `int64`, `uint`, `uint8`, `uint16`, `uint32`, `uint64`, `float32`, `float64`, `bool` or `time.Time`. Used on any other type, `ErrInvalidTag` error will be returned. Example will clarify this more:
+   If pointers are used as data type then the field will be included in WHERE clause only if the variable is initialized. So in case below it will be included because the variable is initialized unlike example above.
+
+   ```
+   b := true
+   whereClause, _ := MarshalWhereClause(QueryCriteria{
+       SomeType:     "SomeValue",
+       SomeBoolType: &b,
+   })
+   // whereClause will be: WHERE Some_Type__c = 'SomeValue' AND Some_Bool_Type__c = true
+   ```
+
+1. `notEqualsOperator`: This tag is used on members which should be considered to construct field expressions in where clause using `!=` comparison operator. This tag should be used on member of type `string`, `int`, `int8`, `int16`, `int32`, `int64`, `uint`, `uint8`, `uint16`, `uint32`, `uint64`, `float32`, `float64`, `bool`, `*int`, `*int8`, `*int16`, `*int32`, `*int64`, `*uint`, `*uint8`, `*uint16`, `*uint32`, `*uint64`, `*float32`, `*float64`, `*bool` or `time.Time`. Used on any other type, `ErrInvalidTag` error will be returned. Example will clarify this more:
 
    ```
    whereClause, _ := MarshalWhereClause(QueryCriteria{
@@ -293,6 +317,8 @@ type QueryCriteria struct {
    })
    // whereClause will be: WHERE Status__c != 'DOWN'
    ```
+
+   Fields that are pointers will only be included if they are initialized else they will be skipped from WHERE clause.
 
 1. `nullOperator`: This tag is used on members which should be considered to construct field expressions in where clause using `= null` or `!= null` comparison operator. This tag should be used on member of type `*bool` or `bool`. Used on any other type, `ErrInvalidTag` error will be returned. Recommended to use `*bool` as `bool` will always be initialized by golang to `false` and will result in `!= null` check even if not intended. Example will clarify this more:
 
@@ -309,7 +335,7 @@ type QueryCriteria struct {
    // whereClause will be: WHERE Value__c != null
    ```
 
-1. `greaterThanOperator`: This tag is used on members which should be considered to construct field expressions in where clause using `>` comparison operator. This tag should be used on member of type `string`, `int`, `int8`, `int16`, `int32`, `int64`, `uint`, `uint8`, `uint16`, `uint32`, `uint64`, `float32`, `float64`, `bool` or `time.Time`. Used on any other type, `ErrInvalidTag` error will be returned. Example will clarify this more:
+1. `greaterThanOperator`: This tag is used on members which should be considered to construct field expressions in where clause using `>` comparison operator. This tag should be used on member of type `string`, `int`, `int8`, `int16`, `int32`, `int64`, `uint`, `uint8`, `uint16`, `uint32`, `uint64`, `float32`, `float64`, `bool`, `*int`, `*int8`, `*int16`, `*int32`, `*int64`, `*uint`, `*uint8`, `*uint16`, `*uint32`, `*uint64`, `*float32`, `*float64`, `*bool` or `time.Time`. Used on any other type, `ErrInvalidTag` error will be returned. Example will clarify this more:
 
    ```
    whereClause, _ := MarshalWhereClause(QueryCriteria{
@@ -318,7 +344,9 @@ type QueryCriteria struct {
    // whereClause will be: WHERE Num_of_CPU_Cores__c > 8
    ```
 
-1. `greaterThanOrEqualsToOperator`: This tag is used on members which should be considered to construct field expressions in where clause using `>=` comparison operator. This tag should be used on member of type `string`, `int`, `int8`, `int16`, `int32`, `int64`, `uint`, `uint8`, `uint16`, `uint32`, `uint64`, `float32`, `float64`, `bool` or `time.Time`. Used on any other type, `ErrInvalidTag` error will be returned. Example will clarify this more:
+   Fields that are pointers will only be included if they are initialized else they will be skipped from WHERE clause.
+
+1. `greaterThanOrEqualsToOperator`: This tag is used on members which should be considered to construct field expressions in where clause using `>=` comparison operator. This tag should be used on member of type `string`, `int`, `int8`, `int16`, `int32`, `int64`, `uint`, `uint8`, `uint16`, `uint32`, `uint64`, `float32`, `float64`, `bool`, `*int`, `*int8`, `*int16`, `*int32`, `*int64`, `*uint`, `*uint8`, `*uint16`, `*uint32`, `*uint64`, `*float32`, `*float64`, `*bool` or `time.Time`. Used on any other type, `ErrInvalidTag` error will be returned. Example will clarify this more:
 
    ```
    whereClause, _ := MarshalWhereClause(QueryCriteria{
@@ -327,7 +355,9 @@ type QueryCriteria struct {
    // whereClause will be: WHERE Physical_CPU_Count__c >= 4
    ```
 
-1. `lessThanOperator`: This tag is used on members which should be considered to construct field expressions in where clause using `<` comparison operator. This tag should be used on member of type `string`, `int`, `int8`, `int16`, `int32`, `int64`, `uint`, `uint8`, `uint16`, `uint32`, `uint64`, `float32`, `float64`, `bool` or `time.Time`. Used on any other type, `ErrInvalidTag` error will be returned. Example will clarify this more:
+   Fields that are pointers will only be included if they are initialized else they will be skipped from WHERE clause.
+
+1. `lessThanOperator`: This tag is used on members which should be considered to construct field expressions in where clause using `<` comparison operator. This tag should be used on member of type `string`, `int`, `int8`, `int16`, `int32`, `int64`, `uint`, `uint8`, `uint16`, `uint32`, `uint64`, `float32`, `float64`, `bool`, `*int`, `*int8`, `*int16`, `*int32`, `*int64`, `*uint`, `*uint8`, `*uint16`, `*uint32`, `*uint64`, `*float32`, `*float64`, `*bool` or `time.Time`. Used on any other type, `ErrInvalidTag` error will be returned. Example will clarify this more:
 
    ```
    whereClause, _ := MarshalWhereClause(QueryCriteria{
@@ -336,7 +366,9 @@ type QueryCriteria struct {
    // whereClause will be: WHERE Allocation_Latency__c < 28.9
    ```
 
-1. `lessThanOrEqualsToOperator`: This tag is used on members which should be considered to construct field expressions in where clause using `<=` comparison operator. This tag should be used on member of type `string`, `int`, `int8`, `int16`, `int32`, `int64`, `uint`, `uint8`, `uint16`, `uint32`, `uint64`, `float32`, `float64`, `bool` or `time.Time`. Used on any other type, `ErrInvalidTag` error will be returned. Example will clarify this more:
+   Fields that are pointers will only be included if they are initialized else they will be skipped from WHERE clause.
+
+1. `lessThanOrEqualsToOperator`: This tag is used on members which should be considered to construct field expressions in where clause using `<=` comparison operator. This tag should be used on member of type `string`, `int`, `int8`, `int16`, `int32`, `int64`, `uint`, `uint8`, `uint16`, `uint32`, `uint64`, `float32`, `float64`, `bool`, `*int`, `*int8`, `*int16`, `*int32`, `*int64`, `*uint`, `*uint8`, `*uint16`, `*uint32`, `*uint64`, `*float32`, `*float64`, `*bool` or `time.Time`. Used on any other type, `ErrInvalidTag` error will be returned. Example will clarify this more:
 
    ```
    whereClause, _ := MarshalWhereClause(QueryCriteria{
@@ -344,6 +376,8 @@ type QueryCriteria struct {
    })
    // whereClause will be: WHERE Pvt_Test_Fail_Count__c <= 32
    ```
+
+   Fields that are pointers will only be included if they are initialized else they will be skipped from WHERE clause.
 
 If there are more than one fields in the struct tagged with `whereClause` then they will be combined using `AND` logical operator. This has been demonstrated in the code snippets in [Advanced usage](#advanced-usage).
 

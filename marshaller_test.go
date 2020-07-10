@@ -65,6 +65,19 @@ var _ = Describe("Marshaller", func() {
 						Expect(clause).To(Equal(expectedClause))
 					})
 				})
+
+				Context("when there is single quote in values", func() {
+					BeforeEach(func() {
+						critetria = TestQueryCriteria{
+							IncludeNamePattern: []string{"-db'", "-dbmgmt", "-dgdb"},
+						}
+						expectedClause = "(Host_Name__c LIKE '%-db\\'%' OR Host_Name__c LIKE '%-dbmgmt%' OR Host_Name__c LIKE '%-dgdb%')"
+					})
+
+					It("returns appropriate where clause by escaping single quote", func() {
+						Expect(clause).To(Equal(expectedClause))
+					})
+				})
 			})
 
 			Context("when only not like clause is populated", func() {
@@ -93,6 +106,19 @@ var _ = Describe("Marshaller", func() {
 						Expect(clause).To(Equal(expectedClause))
 					})
 				})
+
+				Context("when there is single quote in values", func() {
+					BeforeEach(func() {
+						critetria = TestQueryCriteria{
+							ExcludeNamePattern: []string{"-d'b"},
+						}
+						expectedClause = "(NOT Host_Name__c LIKE '%-d\\'b%')"
+					})
+
+					It("returns appropriate where clause by escaping single quote", func() {
+						Expect(clause).To(Equal(expectedClause))
+					})
+				})
 			})
 
 			Context("when only equalsClause is populated", func() {
@@ -106,6 +132,19 @@ var _ = Describe("Marshaller", func() {
 				It("returns appropriate where clause", func() {
 					Expect(clause).To(Equal(expectedClause))
 				})
+
+				Context("when value has single quote", func() {
+					BeforeEach(func() {
+						critetria = TestQueryCriteria{
+							AssetType: "SER'VER",
+						}
+						expectedClause = "Tech_Asset__r.Asset_Type_Asset_Type__c = 'SER\\'VER'"
+					})
+
+					It("returns appropriate where clause by escaping single quote", func() {
+						Expect(clause).To(Equal(expectedClause))
+					})
+				})
 			})
 
 			Context("when only notEqualsClause is populated", func() {
@@ -118,6 +157,19 @@ var _ = Describe("Marshaller", func() {
 
 				It("returns appropriate where clause", func() {
 					Expect(clause).To(Equal(expectedClause))
+				})
+
+				Context("when value has single quote", func() {
+					BeforeEach(func() {
+						critetria = TestQueryCriteria{
+							Status: "In'Active",
+						}
+						expectedClause = "Status__c != 'In\\'Active'"
+					})
+
+					It("returns appropriate where clause by escaping single quote", func() {
+						Expect(clause).To(Equal(expectedClause))
+					})
 				})
 			})
 
@@ -142,6 +194,18 @@ var _ = Describe("Marshaller", func() {
 						expectedClause = "Role__r.Name IN ('db','dbmgmt')"
 					})
 					It("returns where clause with all the items in IN clause", func() {
+						Expect(clause).To(Equal(expectedClause))
+					})
+				})
+
+				Context("when value has single quote", func() {
+					BeforeEach(func() {
+						critetria = TestQueryCriteria{
+							Roles: []string{"db", "db'mgmt"},
+						}
+						expectedClause = "Role__r.Name IN ('db','db\\'mgmt')"
+					})
+					It("returns appropriate where clause by escaping single quote", func() {
 						Expect(clause).To(Equal(expectedClause))
 					})
 				})
@@ -348,6 +412,24 @@ var _ = Describe("Marshaller", func() {
 			})
 		})
 
+		Context("when all clauses are *float data types", func() {
+			var criteria QueryCriteriaWithFloatPtrTypes
+			BeforeEach(func() {
+				numCores := 16.0
+				criteria = QueryCriteriaWithFloatPtrTypes{
+					NumOfCPUCores: &numCores,
+				}
+
+				expectedClause = "Num_of_CPU_Cores__c = 16"
+			})
+
+			It("returns properly formed clause joined by skipping nil values", func() {
+				clause, err = MarshalWhereClause(criteria)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(clause).To(Equal(expectedClause))
+			})
+		})
+
 		Context("when all clauses are boolean data types", func() {
 			var criteria QueryCriteriaWithBooleanType
 			BeforeEach(func() {
@@ -360,6 +442,24 @@ var _ = Describe("Marshaller", func() {
 			})
 
 			It("returns properly formed clause joined by AND clause", func() {
+				clause, err = MarshalWhereClause(criteria)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(clause).To(Equal(expectedClause))
+			})
+		})
+
+		Context("when data type is boolean pointer", func() {
+			var criteria QueryCriteriaWithBooleanPtrType
+			BeforeEach(func() {
+				numEnabled := true
+				criteria = QueryCriteriaWithBooleanPtrType{
+					NUMAEnabled: &numEnabled,
+				}
+
+				expectedClause = "NUMA_Enabled__c = true"
+			})
+
+			It("returns properly formed clause by skipping nil values", func() {
 				clause, err = MarshalWhereClause(criteria)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(clause).To(Equal(expectedClause))
@@ -390,6 +490,7 @@ var _ = Describe("Marshaller", func() {
 			var currentTime time.Time
 			BeforeEach(func() {
 				currentTime = time.Now()
+				numHardDrives := 2
 				criteria = QueryCriteriaWithMixedDataTypesAndOperators{
 					BIOSType:                         "98.7.654a",
 					NumOfCPUCores:                    32,
@@ -402,9 +503,10 @@ var _ = Describe("Marshaller", func() {
 					MajorOSVersion:                   "20",
 					NumOfSuccessivePuppetRunFailures: 0,
 					LastRestart:                      currentTime,
+					NumHardDrives:                    &numHardDrives,
 				}
 
-				expectedClause = "BIOS_Type__c = '98.7.654a' AND Num_of_CPU_Cores__c > 32 AND NUMA_Enabled__c = true AND Pvt_Test_Fail_Count__c <= 256 AND Physical_CPU_Count__c >= 4 AND CreatedDate = " + currentTime.Format(DateFormat) + " AND Disable_Alerts__c = false AND Allocation_Latency__c < 10.5 AND Major_OS_Version__c = '20' AND Number_Of_Successive_Puppet_Run_Failures__c = 0 AND Last_Restart__c > " + currentTime.Format(DateFormat)
+				expectedClause = "BIOS_Type__c = '98.7.654a' AND Num_of_CPU_Cores__c > 32 AND NUMA_Enabled__c = true AND Pvt_Test_Fail_Count__c <= 256 AND Physical_CPU_Count__c >= 4 AND CreatedDate = " + currentTime.Format(DateFormat) + " AND Disable_Alerts__c = false AND Allocation_Latency__c < 10.5 AND Major_OS_Version__c = '20' AND Number_Of_Successive_Puppet_Run_Failures__c = 0 AND Last_Restart__c > " + currentTime.Format(DateFormat) + " AND NumHardDrives__c = 2"
 			})
 
 			It("returns properly formed clause", func() {
@@ -834,6 +936,23 @@ var _ = Describe("Marshaller", func() {
 			})
 		})
 
+		Context("when value with single quotes is passed as argument", func() {
+			BeforeEach(func() {
+				soqlStruct = TestSoqlStruct{
+					SelectClause: NestedStruct{},
+					WhereClause: TestQueryCriteria{
+						IncludeNamePattern: []string{"Blips 'n' Chitz", "Michaels"},
+					},
+				}
+				expectedQuery = "SELECT Id,Name__c,NonNestedStruct__r.Name,NonNestedStruct__r.SomeValue__c FROM SM_Logical_Host__c WHERE (Host_Name__c LIKE '%Blips \\'n\\' Chitz%' OR Host_Name__c LIKE '%Michaels%')"
+			})
+
+			It("returns properly constructed soql query", func() {
+				Expect(err).ToNot(HaveOccurred())
+				Expect(actualQuery).To(Equal(expectedQuery))
+			})
+		})
+
 		Context("when valid value with mixed data type and operator is passed as argument", func() {
 			BeforeEach(func() {
 				currentTime := time.Now()
@@ -1070,17 +1189,38 @@ var _ = Describe("Marshaller", func() {
 			})
 		})
 
-		Context("when a struct with limit value is passed", func() {
+		Context("when a struct with limit value greater than 0 is passed", func() {
 			BeforeEach(func() {
+				input := 5
 				soqlStruct = TestSoqlLimitStruct{
 					SelectClause: NestedStruct{},
 					WhereClause: TestQueryCriteria{
 						IncludeNamePattern: []string{"-db", "-dbmgmt"},
 						Roles:              []string{"db", "dbmgmt"},
 					},
-					Limit: 5,
+					Limit: &input,
 				}
 				expectedQuery = "SELECT Id,Name__c,NonNestedStruct__r.Name,NonNestedStruct__r.SomeValue__c FROM SM_Logical_Host__c WHERE (Host_Name__c LIKE '%-db%' OR Host_Name__c LIKE '%-dbmgmt%') AND Role__r.Name IN ('db','dbmgmt') LIMIT 5"
+			})
+
+			It("returns properly constructed soql query", func() {
+				Expect(err).ToNot(HaveOccurred())
+				Expect(actualQuery).To(Equal(expectedQuery))
+			})
+		})
+
+		Context("when a struct with limit value equal to 0 is passed", func() {
+			BeforeEach(func() {
+				input := 0
+				soqlStruct = TestSoqlLimitStruct{
+					SelectClause: NestedStruct{},
+					WhereClause: TestQueryCriteria{
+						IncludeNamePattern: []string{"-db", "-dbmgmt"},
+						Roles:              []string{"db", "dbmgmt"},
+					},
+					Limit: &input,
+				}
+				expectedQuery = "SELECT Id,Name__c,NonNestedStruct__r.Name,NonNestedStruct__r.SomeValue__c FROM SM_Logical_Host__c WHERE (Host_Name__c LIKE '%-db%' OR Host_Name__c LIKE '%-dbmgmt%') AND Role__r.Name IN ('db','dbmgmt') LIMIT 0"
 			})
 
 			It("returns properly constructed soql query", func() {
@@ -1107,7 +1247,7 @@ var _ = Describe("Marshaller", func() {
 			})
 		})
 
-		Context("when a struct with invalid limit value is passed", func() {
+		Context("when a struct with invalid limit type is passed", func() {
 			BeforeEach(func() {
 				soqlStruct = TestSoqlInvalidLimitStruct{
 					SelectClause: NestedStruct{},
@@ -1124,16 +1264,35 @@ var _ = Describe("Marshaller", func() {
 			})
 		})
 
+		Context("when a struct with invalid limit value is passed", func() {
+			BeforeEach(func() {
+				input := -5
+				soqlStruct = TestSoqlLimitStruct{
+					SelectClause: NestedStruct{},
+					WhereClause: TestQueryCriteria{
+						IncludeNamePattern: []string{"-db", "-dbmgmt"},
+						Roles:              []string{"db", "dbmgmt"},
+					},
+					Limit: &input,
+				}
+			})
+
+			It("returns error", func() {
+				Expect(err).To(Equal(ErrInvalidLimitClause))
+			})
+		})
+
 		Context("when a struct with multiple limit values is passed", func() {
 			BeforeEach(func() {
+				input := 5
 				soqlStruct = TestSoqlMultipleLimitStruct{
 					SelectClause: NestedStruct{},
 					WhereClause: TestQueryCriteria{
 						IncludeNamePattern: []string{"-db", "-dbmgmt"},
 						Roles:              []string{"db", "dbmgmt"},
 					},
-					Limit:     5,
-					AlsoLimit: 15,
+					Limit:     &input,
+					AlsoLimit: &input,
 				}
 			})
 
@@ -1144,10 +1303,11 @@ var _ = Describe("Marshaller", func() {
 
 		Context("when a struct with limit inside a child relation is passed", func() {
 			BeforeEach(func() {
+				input := 1
 				soqlStruct = TestSoqlChildRelationLimitStruct{
 					SelectClause: ParentLimitStruct{
 						ChildStruct: ChildLimitStruct{
-							Limit: 1,
+							Limit: &input,
 						},
 					},
 				}
@@ -1162,15 +1322,151 @@ var _ = Describe("Marshaller", func() {
 
 		Context("when a struct with limit inside a child relation is passed", func() {
 			BeforeEach(func() {
+				inputChild := 10
+				inputParent := 25
 				soqlStruct = TestSoqlChildRelationLimitStruct{
 					SelectClause: ParentLimitStruct{
 						ChildStruct: ChildLimitStruct{
-							Limit: 10,
+							Limit: &inputChild,
 						},
 					},
-					Limit: 25,
+					Limit: &inputParent,
 				}
 				expectedQuery = "SELECT Id,Name__c,(SELECT Application_Versions__c.Id,Application_Versions__c.Version__c FROM Application_Versions__r LIMIT 10) FROM SM_Logical_Host__c LIMIT 25"
+			})
+
+			It("returns properly constructed soql query", func() {
+				Expect(err).ToNot(HaveOccurred())
+				Expect(actualQuery).To(Equal(expectedQuery))
+			})
+		})
+
+		Context("when a struct with offset value is passed", func() {
+			BeforeEach(func() {
+				input := 5
+				soqlStruct = TestSoqlOffsetStruct{
+					SelectClause: NestedStruct{},
+					WhereClause: TestQueryCriteria{
+						IncludeNamePattern: []string{"-db", "-dbmgmt"},
+						Roles:              []string{"db", "dbmgmt"},
+					},
+					Offset: &input,
+				}
+				expectedQuery = "SELECT Id,Name__c,NonNestedStruct__r.Name,NonNestedStruct__r.SomeValue__c FROM SM_Logical_Host__c WHERE (Host_Name__c LIKE '%-db%' OR Host_Name__c LIKE '%-dbmgmt%') AND Role__r.Name IN ('db','dbmgmt') OFFSET 5"
+			})
+
+			It("returns properly constructed soql query", func() {
+				Expect(err).ToNot(HaveOccurred())
+				Expect(actualQuery).To(Equal(expectedQuery))
+			})
+		})
+
+		Context("when a struct without offset value is passed", func() {
+			BeforeEach(func() {
+				soqlStruct = TestSoqlOffsetStruct{
+					SelectClause: NestedStruct{},
+					WhereClause: TestQueryCriteria{
+						IncludeNamePattern: []string{"-db", "-dbmgmt"},
+						Roles:              []string{"db", "dbmgmt"},
+					},
+				}
+				expectedQuery = "SELECT Id,Name__c,NonNestedStruct__r.Name,NonNestedStruct__r.SomeValue__c FROM SM_Logical_Host__c WHERE (Host_Name__c LIKE '%-db%' OR Host_Name__c LIKE '%-dbmgmt%') AND Role__r.Name IN ('db','dbmgmt')"
+			})
+
+			It("returns properly constructed soql query", func() {
+				Expect(err).ToNot(HaveOccurred())
+				Expect(actualQuery).To(Equal(expectedQuery))
+			})
+		})
+
+		Context("when a struct with offset value of 0 is passed", func() {
+			BeforeEach(func() {
+				input := 0
+				soqlStruct = TestSoqlOffsetStruct{
+					SelectClause: NestedStruct{},
+					WhereClause: TestQueryCriteria{
+						IncludeNamePattern: []string{"-db", "-dbmgmt"},
+						Roles:              []string{"db", "dbmgmt"},
+					},
+					Offset: &input,
+				}
+				expectedQuery = "SELECT Id,Name__c,NonNestedStruct__r.Name,NonNestedStruct__r.SomeValue__c FROM SM_Logical_Host__c WHERE (Host_Name__c LIKE '%-db%' OR Host_Name__c LIKE '%-dbmgmt%') AND Role__r.Name IN ('db','dbmgmt') OFFSET 0"
+			})
+
+			It("returns properly constructed soql query", func() {
+				Expect(err).ToNot(HaveOccurred())
+				Expect(actualQuery).To(Equal(expectedQuery))
+			})
+		})
+
+		Context("when a struct with invalid offset type is passed", func() {
+			BeforeEach(func() {
+				soqlStruct = TestSoqlInvalidOffsetStruct{
+					SelectClause: NestedStruct{},
+					WhereClause: TestQueryCriteria{
+						IncludeNamePattern: []string{"-db", "-dbmgmt"},
+						Roles:              []string{"db", "dbmgmt"},
+					},
+					Offset: "5",
+				}
+			})
+
+			It("returns error", func() {
+				Expect(err).To(Equal(ErrInvalidOffsetClause))
+			})
+		})
+
+		Context("when a struct with invalid offset value is passed", func() {
+			BeforeEach(func() {
+				input := -5
+				soqlStruct = TestSoqlOffsetStruct{
+					SelectClause: NestedStruct{},
+					WhereClause: TestQueryCriteria{
+						IncludeNamePattern: []string{"-db", "-dbmgmt"},
+						Roles:              []string{"db", "dbmgmt"},
+					},
+					Offset: &input,
+				}
+			})
+
+			It("returns error", func() {
+				Expect(err).To(Equal(ErrInvalidOffsetClause))
+			})
+		})
+
+		Context("when a struct with multiple offset values is passed", func() {
+			BeforeEach(func() {
+				input := 5
+				soqlStruct = TestSoqlMultipleOffsetStruct{
+					SelectClause: NestedStruct{},
+					WhereClause: TestQueryCriteria{
+						IncludeNamePattern: []string{"-db", "-dbmgmt"},
+						Roles:              []string{"db", "dbmgmt"},
+					},
+					Offset:     &input,
+					AlsoOffset: &input,
+				}
+			})
+
+			It("returns error", func() {
+				Expect(err).To(Equal(ErrMultipleOffsetClause))
+			})
+		})
+
+		Context("when a struct with offset value and limit value is passed", func() {
+			BeforeEach(func() {
+				inputLimit := 15
+				inputOffset := 5
+				soqlStruct = TestSoqlLimitAndOffsetStruct{
+					SelectClause: NestedStruct{},
+					WhereClause: TestQueryCriteria{
+						IncludeNamePattern: []string{"-db", "-dbmgmt"},
+						Roles:              []string{"db", "dbmgmt"},
+					},
+					Limit:  &inputLimit,
+					Offset: &inputOffset,
+				}
+				expectedQuery = "SELECT Id,Name__c,NonNestedStruct__r.Name,NonNestedStruct__r.SomeValue__c FROM SM_Logical_Host__c WHERE (Host_Name__c LIKE '%-db%' OR Host_Name__c LIKE '%-dbmgmt%') AND Role__r.Name IN ('db','dbmgmt') LIMIT 15 OFFSET 5"
 			})
 
 			It("returns properly constructed soql query", func() {

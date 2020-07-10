@@ -186,9 +186,19 @@ type QueryCriteriaWithFloatTypes struct {
 	PhysicalCPUCount float64 `soql:"equalsOperator,fieldName=Physical_CPU_Count__c"`
 }
 
+type QueryCriteriaWithFloatPtrTypes struct {
+	NumOfCPUCores    *float64 `soql:"equalsOperator,fieldName=Num_of_CPU_Cores__c"`
+	PhysicalCPUCount *float64 `soql:"equalsOperator,fieldName=Physical_CPU_Count__c"`
+}
+
 type QueryCriteriaWithBooleanType struct {
 	NUMAEnabled   bool `soql:"equalsOperator,fieldName=NUMA_Enabled__c"`
 	DisableAlerts bool `soql:"equalsOperator,fieldName=Disable_Alerts__c"`
+}
+
+type QueryCriteriaWithBooleanPtrType struct {
+	NUMAEnabled   *bool `soql:"equalsOperator,fieldName=NUMA_Enabled__c"`
+	DisableAlerts *bool `soql:"equalsOperator,fieldName=Disable_Alerts__c"`
 }
 
 type QueryCriteriaWithDateTimeType struct {
@@ -214,6 +224,8 @@ type QueryCriteriaWithMixedDataTypesAndOperators struct {
 	MajorOSVersion                   string    `soql:"equalsOperator,fieldName=Major_OS_Version__c"`
 	NumOfSuccessivePuppetRunFailures uint32    `soql:"equalsOperator,fieldName=Number_Of_Successive_Puppet_Run_Failures__c"`
 	LastRestart                      time.Time `soql:"greaterThanOperator,fieldName=Last_Restart__c"`
+	Memory                           *float64  `soql:"equalsOperator,fieldName=Memory__c"`
+	NumHardDrives                    *int      `soql:"equalsOperator,fieldName=NumHardDrives__c"`
 }
 
 type InvalidSelectClause struct {
@@ -233,7 +245,7 @@ type TestSoqlChildRelationOrderByStruct struct {
 type TestSoqlLimitStruct struct {
 	SelectClause NestedStruct      `soql:"selectClause,tableName=SM_Logical_Host__c"`
 	WhereClause  TestQueryCriteria `soql:"whereClause"`
-	Limit        int               `soql:"limitClause"`
+	Limit        *int              `soql:"limitClause"`
 }
 
 type TestSoqlInvalidLimitStruct struct {
@@ -245,8 +257,8 @@ type TestSoqlInvalidLimitStruct struct {
 type TestSoqlMultipleLimitStruct struct {
 	SelectClause NestedStruct      `soql:"selectClause,tableName=SM_Logical_Host__c"`
 	WhereClause  TestQueryCriteria `soql:"whereClause"`
-	Limit        int               `soql:"limitClause"`
-	AlsoLimit    int               `soql:"limitClause"`
+	Limit        *int              `soql:"limitClause"`
+	AlsoLimit    *int              `soql:"limitClause"`
 }
 
 type ParentLimitStruct struct {
@@ -257,7 +269,7 @@ type ParentLimitStruct struct {
 
 type ChildLimitStruct struct {
 	SelectClause TestChildLimitSelect `soql:"selectClause,tableName=Application_Versions__c"`
-	Limit        int                  `soql:"limitClause"`
+	Limit        *int                 `soql:"limitClause"`
 }
 
 type TestChildLimitSelect struct {
@@ -267,5 +279,31 @@ type TestChildLimitSelect struct {
 
 type TestSoqlChildRelationLimitStruct struct {
 	SelectClause ParentLimitStruct `soql:"selectClause,tableName=SM_Logical_Host__c"`
-	Limit        int               `soql:"limitClause"`
+	Limit        *int              `soql:"limitClause"`
+}
+
+type TestSoqlOffsetStruct struct {
+	SelectClause NestedStruct      `soql:"selectClause,tableName=SM_Logical_Host__c"`
+	WhereClause  TestQueryCriteria `soql:"whereClause"`
+	Offset       *int              `soql:"offsetClause"`
+}
+
+type TestSoqlInvalidOffsetStruct struct {
+	SelectClause NestedStruct      `soql:"selectClause,tableName=SM_Logical_Host__c"`
+	WhereClause  TestQueryCriteria `soql:"whereClause"`
+	Offset       string            `soql:"offsetClause"`
+}
+
+type TestSoqlMultipleOffsetStruct struct {
+	SelectClause NestedStruct      `soql:"selectClause,tableName=SM_Logical_Host__c"`
+	WhereClause  TestQueryCriteria `soql:"whereClause"`
+	Offset       *int              `soql:"offsetClause"`
+	AlsoOffset   *int              `soql:"offsetClause"`
+}
+
+type TestSoqlLimitAndOffsetStruct struct {
+	SelectClause NestedStruct      `soql:"selectClause,tableName=SM_Logical_Host__c"`
+	WhereClause  TestQueryCriteria `soql:"whereClause"`
+	Limit        *int              `soql:"limitClause"`
+	Offset       *int              `soql:"offsetClause"`
 }

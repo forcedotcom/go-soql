@@ -21,6 +21,7 @@ const (
 	orCondition                   = " OR "
 	andCondition                  = " AND "
 	singleQuote                   = "'"
+	safeSingleQuote               = "\\'"
 	comma                         = ","
 	notOperator                   = "NOT "
 	openLike                      = " LIKE '%"
@@ -39,6 +40,7 @@ const (
 	fromKeyword                   = " FROM "
 	orderByKeyword                = " ORDER BY "
 	limitKeyword                  = " LIMIT "
+	offsetKeyword                 = " OFFSET "
 	ascKeyword                    = " ASC"
 	descKeyword                   = " DESC"
 
@@ -62,8 +64,10 @@ const (
 	WhereClause = "whereClause"
 	// OrderByClause is the tag to be used when marking the string slice to be considered for order by clause
 	OrderByClause = "orderByClause"
-	// LimitClause is the tag to be used when marking the string slice to be considered for limit clause
+	// LimitClause is the tag to be used when marking the int to be considered for limit clause
 	LimitClause = "limitClause"
+	// OffsetClause is the tag to be used when marking the int to be considered for offset clause
+	OffsetClause = "offsetClause"
 	// LikeOperator is the tag to be used for "like" operator in where clause
 	LikeOperator = "likeOperator"
 	// NotLikeOperator is the tag to be used for "not like" operator in where clause
@@ -130,6 +134,12 @@ var (
 
 	// ErrMultipleLimitClause error is returned when there are multiple limitClause in struct
 	ErrMultipleLimitClause = errors.New("ErrMultipleLimitClause")
+
+	// ErrInvalidOffsetClause error is returned when field with offsetClause tag is invalid
+	ErrInvalidOffsetClause = errors.New("ErrInvalidOffsetClause")
+
+	// ErrMultipleOffsetClause error is returned when there are multiple offsetClause in struct
+	ErrMultipleOffsetClause = errors.New("ErrMultipleOffsetClause")
 )
 
 // Order is the struct for defining the order by clause on a per column basis
@@ -142,6 +152,10 @@ type Order struct {
 	Field string
 	// IsDesc indicates whether the ordering is DESC (true) or ASC (false)
 	IsDesc bool
+}
+
+func sanitizeString(str string) string {
+	return strings.ReplaceAll(str, singleQuote, safeSingleQuote)
 }
 
 func buildLikeClause(v interface{}, fieldName string) (string, error) {
@@ -175,7 +189,7 @@ func constructLikeClause(v interface{}, fieldName string, exclude bool) (string,
 		}
 		buff.WriteString(fieldName)
 		buff.WriteString(openLike)
-		buff.WriteString(pattern)
+		buff.WriteString(sanitizeString(pattern))
 		buff.WriteString(closeLike)
 		if exclude {
 			buff.WriteString(closeBrace)
@@ -217,10 +231,10 @@ func buildInClause(v interface{}, fieldName string) (string, error) {
 		}
 		if useSingleQuotes {
 			buff.WriteString(singleQuote)
-		}
-		buff.WriteString(item)
-		if useSingleQuotes {
+			buff.WriteString(sanitizeString(item))
 			buff.WriteString(singleQuote)
+		} else {
+			buff.WriteString(item)
 		}
 	}
 	if len(items) > 0 {
@@ -266,6 +280,10 @@ func constructComparisonClause(v interface{}, fieldName, operator string) (strin
 		value = fmt.Sprint(u)
 	case time.Time:
 		value = u.Format(DateFormat)
+	case *int, *int8, *int16, *int32, *int64, *uint, *uint8, *uint16, *uint32, *uint64, *float32, *float64, *bool:
+		if !reflect.ValueOf(u).IsNil() {
+			value = fmt.Sprint(reflect.Indirect(reflect.ValueOf(u)))
+		}
 	default:
 		return buff.String(), ErrInvalidTag
 	}
@@ -275,10 +293,10 @@ func constructComparisonClause(v interface{}, fieldName, operator string) (strin
 		buff.WriteString(operator)
 		if useSingleQuotes {
 			buff.WriteString(singleQuote)
-		}
-		buff.WriteString(value)
-		if useSingleQuotes {
+			buff.WriteString(sanitizeString(value))
 			buff.WriteString(singleQuote)
+		} else {
+			buff.WriteString(value)
 		}
 	}
 	return buff.String(), nil
@@ -431,20 +449,39 @@ func marshalOrderByClause(v interface{}, tableName string, s interface{}) (strin
 
 // v is the limit value provided
 func marshalLimitClause(v interface{}) (string, error) {
-	limit, ok := v.(int)
-	if !ok {
+	s, err := marshalIntValue(v)
+	if err != nil {
 		return "", ErrInvalidLimitClause
 	}
-	if limit < 0 {
-		return "", ErrInvalidLimitClause
+	return s, nil
+}
+
+// v is the offset value provided
+func marshalOffsetClause(v interface{}) (string, error) {
+	s, err := marshalIntValue(v)
+	if err != nil {
+		return "", ErrInvalidOffsetClause
+	}
+	return s, nil
+}
+
+func marshalIntValue(v interface{}) (string, error) {
+	vPtr, ok := v.(*int)
+	if !ok {
+		return "", errors.New("invalid type")
+	}
+	if vPtr == nil {
+		return "", nil
 	}
 
-	var buff strings.Builder
-	if limit > 0 {
-		limitString := strconv.Itoa(limit)
-		buff.WriteString(limitString)
+	vInt := *vPtr
+	if vInt < 0 {
+		return "", errors.New("invalid value")
 	}
-	return buff.String(), nil
+
+	vString := strconv.Itoa(vInt)
+
+	return vString, nil
 }
 
 // MarshalOrderByClause returns a string representing the SOQL order by clause.
@@ -717,11 +754,13 @@ func marshal(reflectedValue reflect.Value, reflectedType reflect.Type, childRela
 		whereClausePresent := false
 		orderByClausePresent := false
 		limitClausePresent := false
+		offsetClausePresent := false
 		var selectSubString strings.Builder
 		var selectValue interface{}
 		var whereValue interface{}
 		var orderByValue interface{}
 		var limitValue interface{}
+		var offsetValue interface{}
 		tableName := ""
 		for i := 0; i < totalFields; i++ {
 			field := reflectedType.Field(i)
@@ -778,6 +817,12 @@ func marshal(reflectedValue reflect.Value, reflectedType reflect.Type, childRela
 				}
 				limitValue = reflectedValue.Field(i).Interface()
 				limitClausePresent = true
+			case OffsetClause:
+				if offsetClausePresent {
+					return "", ErrMultipleOffsetClause
+				}
+				offsetValue = reflectedValue.Field(i).Interface()
+				offsetClausePresent = true
 			default:
 				return "", ErrInvalidTag
 			}
@@ -826,6 +871,16 @@ func marshal(reflectedValue reflect.Value, reflectedType reflect.Type, childRela
 			}
 			if subStr != "" {
 				buff.WriteString(limitKeyword)
+				buff.WriteString(subStr)
+			}
+		}
+		if offsetClausePresent {
+			subStr, err := marshalOffsetClause(offsetValue)
+			if err != nil {
+				return "", err
+			}
+			if subStr != "" {
+				buff.WriteString(offsetKeyword)
 				buff.WriteString(subStr)
 			}
 		}
