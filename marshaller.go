@@ -9,6 +9,7 @@ package soql
 import (
 	"errors"
 	"fmt"
+	"log"
 	"reflect"
 	"strconv"
 	"strings"
@@ -88,6 +89,9 @@ const (
 	LessThanOperator = "lessThanOperator"
 	// LessThanOrEqualsToOperator is the tag to be used for "<=" operator in where clause
 	LessThanOrEqualsToOperator = "lessThanOrEqualsToOperator"
+
+	// Subquery is the tag to be used for a subquery in a where clause
+	Subquery = "subquery"
 )
 
 var clauseBuilderMap = map[string]func(v interface{}, fieldName string) (string, error){
@@ -266,6 +270,17 @@ func buildLessThanClause(v interface{}, fieldName string) (string, error) {
 func buildLessThanOrEqualsToClause(v interface{}, fieldName string) (string, error) {
 	return constructComparisonClause(v, fieldName, lessThanOrEqualsToOperator)
 }
+
+// func buildSubqueryClause(v interface{}, fieldName string) (string, error) {
+// 	log.Println("buildSubquerycalled")
+// 	substring, err := marshalWhereClause(v, fieldName)
+// 	if err != nil {
+// 		return "", err
+// 	}
+// 	log.Println("substring:", substring)
+// 	return "(" + substring + ")", nil
+
+// }
 
 func constructComparisonClause(v interface{}, fieldName, operator string) (string, error) {
 	var buff strings.Builder
@@ -513,6 +528,37 @@ func MarshalOrderByClause(v interface{}, s interface{}) (string, error) {
 	return marshalOrderByClause(v, "", s)
 }
 
+// func buildQuery(buff strings.Builder,
+// 	field reflect.Value, fieldType reflect.StructField,
+// 	tableName string, previousConditionExists bool) (bool, error) {
+// 	clauseTag := fieldType.Tag.Get(SoqlTag)
+// 	clauseKey := getClauseKey(clauseTag)
+// 	fieldName := getFieldName(clauseTag, fieldType.Name)
+// 	if fieldName == "" {
+// 		return false, ErrInvalidTag
+// 	}
+// 	fn, ok := clauseBuilderMap[clauseKey]
+// 	if !ok {
+// 		return false, ErrInvalidTag
+// 	}
+// 	columnName := fieldName
+// 	if tableName != "" {
+// 		columnName = tableName + period + fieldName
+// 	}
+// 	partialClause, err := fn(field.Interface(), columnName)
+// 	if err != nil {
+// 		return false, err
+// 	}
+// 	if partialClause != "" {
+// 		if previousConditionExists {
+// 			buff.WriteString(andCondition)
+// 		}
+// 		buff.WriteString(partialClause)
+// 		previousConditionExists = true
+// 	}
+
+// 	return previousConditionExists, nil
+// }
 func marshalWhereClause(v interface{}, tableName string) (string, error) {
 	var buff strings.Builder
 	reflectedValue, reflectedType, err := getReflectedValueAndType(v)
@@ -525,21 +571,34 @@ func marshalWhereClause(v interface{}, tableName string) (string, error) {
 		fieldType := reflectedType.Field(i)
 		clauseTag := fieldType.Tag.Get(SoqlTag)
 		clauseKey := getClauseKey(clauseTag)
-		fieldName := getFieldName(clauseTag, fieldType.Name)
-		if fieldName == "" {
-			return "", ErrInvalidTag
-		}
-		fn, ok := clauseBuilderMap[clauseKey]
-		if !ok {
-			return "", ErrInvalidTag
-		}
-		columnName := fieldName
-		if tableName != "" {
-			columnName = tableName + period + fieldName
-		}
-		partialClause, err := fn(field.Interface(), columnName)
-		if err != nil {
-			return "", err
+		// log.Println("fieldType:", fieldType)
+		// log.Println("clauseTag:", clauseTag)
+		// log.Println("clauseKey:", clauseKey)
+		var partialClause string
+		if clauseKey == Subquery {
+			partialClause, err = marshalWhereClause(field.Interface(), tableName)
+			if err != nil {
+				return "", err
+			}
+
+			partialClause = "(" + partialClause + ")"
+		} else {
+			fieldName := getFieldName(clauseTag, fieldType.Name)
+			if fieldName == "" {
+				return "", ErrInvalidTag
+			}
+			fn, ok := clauseBuilderMap[clauseKey]
+			if !ok {
+				return "", ErrInvalidTag
+			}
+			columnName := fieldName
+			if tableName != "" {
+				columnName = tableName + period + fieldName
+			}
+			partialClause, err = fn(field.Interface(), columnName)
+			if err != nil {
+				return "", err
+			}
 		}
 		if partialClause != "" {
 			if previousConditionExists {
@@ -933,6 +992,7 @@ func marshal(reflectedValue reflect.Value, reflectedType reflect.Type, childRela
 // This will print soql query as:
 // SELECT Id,Name__c,NonNestedStruct__r.Name,NonNestedStruct__r.SomeValue__c FROM SM_Logical_Host__c WHERE (Host_Name__c LIKE '%-db%' OR Host_Name__c LIKE '%-dbmgmt%') AND Role__r.Name IN ('db','dbmgmt')
 func Marshal(v interface{}) (string, error) {
+	log.Println("t-margheim/ marshal called")
 	rv, rt, err := getReflectedValueAndType(v)
 	if err != nil {
 		return "", err
