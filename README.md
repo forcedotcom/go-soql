@@ -93,6 +93,8 @@ SELECT Name__c,SomeValue__c FROM SM_SomeObject__C WHERE (Name__c LIKE '%foo%' OR
 
 ### Advanced usage
 
+#### Relationships
+
 This package supports child to parent as well as parent to child relationships. Here's a more complex example that includes both the relationships and how the soql query is marshalled:
 
 ```
@@ -175,6 +177,91 @@ SELECT Id,Name__c,NonNestedStruct__r.Name,NonNestedStruct__r.SomeValue__c,(SELEC
 
 You can find detailed usage in `marshaller_test.go`.
 
+#### Subqueries
+
+This package supports nested conditions within `WHERE` clauses as well. For example:
+
+``` go
+
+type contact struct {
+	Name  string `soql:"selectColumn,fieldName=Name" json:"Name"`
+	Email string `soql:"selectColumn,fieldName=Email" json:"Email"`
+	Phone string `soql:"selectColumn,fieldName=Phone" json:"Phone"`
+}
+
+type soqlQuery struct {
+	SelectClause contact       `soql:"selectClause,tableName=Contact"`
+	WhereClause  queryCriteria `soql:"whereClause"`
+}
+
+type queryCriteria struct {
+	Position    positionCriteria    `soql:"subquery,joiner=OR"`
+	Contactable contactableCriteria `soql:"subquery,joiner=OR"`
+}
+
+type positionCriteria struct {
+	Title             string              `soql:"equalsOperator,fieldName=Title"`
+	DepartmentManager deptManagerCriteria `soql:"subquery"`
+}
+
+type deptManagerCriteria struct {
+	Department string   `soql:"equalsOperator,fieldName=Department"`
+	Title      []string `soql:"likeOperator,fieldName=Title"`
+}
+
+type contactableCriteria struct {
+	EmailOK emailCheck `soql:"subquery,joiner=and"`
+	PhoneOK phoneCheck `soql:"subquery,joiner=and"`
+}
+
+type emailCheck struct {
+	Email         bool `soql:"nullOperator,fieldName=Email"`
+	EmailOptedOut bool `soql:"equalsOperator,fieldName=HasOptedOutOfEmail"`
+}
+
+type phoneCheck struct {
+	Phone     bool `soql:"nullOperator,fieldName=Phone"`
+	DoNotCall bool `soql:"equalsOperator,fieldName=DoNotCall"`
+}
+soqlStruct := soqlQuery{
+    WhereClause: queryCriteria{
+        Position: positionCriteria{
+            Title: "Purchasing Manager",
+            DepartmentManager: deptManagerCriteria{
+                Department: "Accounting",
+                Title:      []string{"Manager"},
+            },
+        },
+        Contactable: contactableCriteria{
+            EmailOK: emailCheck{
+                Email:         false,
+                EmailOptedOut: false,
+            },
+            PhoneOK: phoneCheck{
+                Phone:     false,
+                DoNotCall: false,
+            },
+        },
+    },
+}
+query, err := soql.Marshal(soqlStruct)
+if err != nil {
+     fmt.Printf("Error in marshalling: %s\n", err.Error())
+}
+fmt.Println(soqlQuery)
+
+```
+
+The above code will generate this SOQL query:
+
+``` sql
+SELECT Name,Email,Phone
+FROM Contact
+WHERE (Title = 'Purchasing Manager' OR (Department = 'Accounting' AND Title LIKE '%Manager%')) AND ((Email != null AND HasOptedOutOfEmail = false) OR (Phone != null AND DoNotCall = false))
+```
+
+#### Advantages
+
 Intended users of this package are developers writing clients to interact with Salesforce. They can now define golang structs, annotate them and generate SOQL queries to be passed to Salesforce API. Great thing about this is that the json structure of returned response matches with selectClause, so you can just unmarshal response into the golang struct that was annotated with `selectClause` and now you have your query response directly available in golang struct.
 
 ## Tags explained
@@ -202,7 +289,7 @@ type NonNestedStruct struct {
 
 1. `selectClause`: This tag is used on the struct which should be considered for generating part of SOQL query that contains columns/fields that should be selected. It should be used only on `struct` type. If used on types other than `struct` then `ErrInvalidTag` error will be returned. This tag is associated with `tableName` parameter. It specifies the name of the table (Salesforce object) from which the columns should be selected. If not specified name of the field is used as table name (Salesforce object). In the snippet above `SelectClause` member of `TestSoqlStruct` is tagged with `selectClause` to indicate that members in `NonNestedStruct` should be considered as fields to be selected from Salesforce object `SM_SomeObject__c`.
 
-1. `whereClause`: This tag is used on the struct which encapsulates the query criteria for SOQL query. There are no parameters for this tag. In the snippet above `WhereClause` member of `TestSoqlStruct` is tagged with `whereClause` to indicate that members in `TestQueryCriteria` should be considered for generating `WHERE` clause in SOQL query. If there are more than one field in `TestQueryCriteria` struct then they will be combined using `AND` logical operator.
+1. `whereClause`: This tag is used on the struct which encapsulates the query criteria for SOQL query. There is an optional parameter `joiner` for this tag. In the snippet above `WhereClause` member of `TestSoqlStruct` is tagged with `whereClause` to indicate that members in `TestQueryCriteria` should be considered for generating `WHERE` clause in SOQL query. If there are more than one field in `TestQueryCriteria` struct then they will be combined using `AND` logical operator. If the `joiner` parameter is set to `or`, then the fields will be combined using `OR` logical operator.  Any other value including no value will use the `AND` logical operator. The `joiner` parameter is only supported when using `Marshal`; when calling `MarshalWhereClause`, the fields will always be combined with the `AND` logical operator.
 
 1. `orderByClause`: This tag is used on the slice of `Order` to capture the ordering of columns and sort order. There are no parameters for this tag. Clients using this library can expose `Order` struct from this library to their users if they wish to allow users of the client to control ordering of the result.
 
@@ -259,6 +346,12 @@ type QueryCriteria struct {
 	PhysicalCPUCount   uint8    `soql:"greaterThanOrEqualsToOperator,fieldName=Physical_CPU_Count__c"`
 	AllocationLatency  float64  `soql:"lessThanOperator,fieldName=Allocation_Latency__c"`
 	PvtTestFailCount   int64    `soql:"lessThanOrEqualsToOperator,fieldName=Pvt_Test_Fail_Count__c"`
+    Subquery sub `soql:"subquery"`
+}
+
+type sub struct {
+    NumOfCPUCores      int      `soql:"lessThanOperator,fieldName=Num_of_CPU_Cores__c"`
+	PhysicalCPUCount   uint8    `soql:"lessThanOrEqualsToOperator,fieldName=Physical_CPU_Count__c"`
 }
 ```
 
@@ -380,6 +473,8 @@ type QueryCriteria struct {
    Fields that are pointers will only be included if they are initialized else they will be skipped from WHERE clause.
 
 If there are more than one fields in the struct tagged with `whereClause` then they will be combined using `AND` logical operator. This has been demonstrated in the code snippets in [Advanced usage](#advanced-usage).
+
+1. `subquery`: This tag is used on members which should be used to construct related sets of conditions wrapped in `()` in the query. This tag should only be used on members of type `struct`. Used on any other type, `ErrInvalidTag` error will be returned. Any of the above property tags (including `subquery`) may be used in the designated `struct`.
 
 #### The Order struct and orderByClause
 

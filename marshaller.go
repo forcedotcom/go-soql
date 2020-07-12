@@ -9,7 +9,6 @@ package soql
 import (
 	"errors"
 	"fmt"
-	"log"
 	"reflect"
 	"strconv"
 	"strings"
@@ -63,6 +62,8 @@ const (
 	FieldName = "fieldName"
 	// WhereClause is the tag to be used when marking the struct to be considered for where clause
 	WhereClause = "whereClause"
+	// Joiner is the parameter to be used to specify the joiner to use between properties within a where clause
+	Joiner = "joiner"
 	// OrderByClause is the tag to be used when marking the string slice to be considered for order by clause
 	OrderByClause = "orderByClause"
 	// LimitClause is the tag to be used when marking the int to be considered for limit clause
@@ -270,17 +271,6 @@ func buildLessThanClause(v interface{}, fieldName string) (string, error) {
 func buildLessThanOrEqualsToClause(v interface{}, fieldName string) (string, error) {
 	return constructComparisonClause(v, fieldName, lessThanOrEqualsToOperator)
 }
-
-// func buildSubqueryClause(v interface{}, fieldName string) (string, error) {
-// 	log.Println("buildSubquerycalled")
-// 	substring, err := marshalWhereClause(v, fieldName)
-// 	if err != nil {
-// 		return "", err
-// 	}
-// 	log.Println("substring:", substring)
-// 	return "(" + substring + ")", nil
-
-// }
 
 func constructComparisonClause(v interface{}, fieldName, operator string) (string, error) {
 	var buff strings.Builder
@@ -528,38 +518,7 @@ func MarshalOrderByClause(v interface{}, s interface{}) (string, error) {
 	return marshalOrderByClause(v, "", s)
 }
 
-// func buildQuery(buff strings.Builder,
-// 	field reflect.Value, fieldType reflect.StructField,
-// 	tableName string, previousConditionExists bool) (bool, error) {
-// 	clauseTag := fieldType.Tag.Get(SoqlTag)
-// 	clauseKey := getClauseKey(clauseTag)
-// 	fieldName := getFieldName(clauseTag, fieldType.Name)
-// 	if fieldName == "" {
-// 		return false, ErrInvalidTag
-// 	}
-// 	fn, ok := clauseBuilderMap[clauseKey]
-// 	if !ok {
-// 		return false, ErrInvalidTag
-// 	}
-// 	columnName := fieldName
-// 	if tableName != "" {
-// 		columnName = tableName + period + fieldName
-// 	}
-// 	partialClause, err := fn(field.Interface(), columnName)
-// 	if err != nil {
-// 		return false, err
-// 	}
-// 	if partialClause != "" {
-// 		if previousConditionExists {
-// 			buff.WriteString(andCondition)
-// 		}
-// 		buff.WriteString(partialClause)
-// 		previousConditionExists = true
-// 	}
-
-// 	return previousConditionExists, nil
-// }
-func marshalWhereClause(v interface{}, tableName string) (string, error) {
+func marshalWhereClause(v interface{}, tableName, joiner string) (string, error) {
 	var buff strings.Builder
 	reflectedValue, reflectedType, err := getReflectedValueAndType(v)
 	if err != nil {
@@ -571,12 +530,12 @@ func marshalWhereClause(v interface{}, tableName string) (string, error) {
 		fieldType := reflectedType.Field(i)
 		clauseTag := fieldType.Tag.Get(SoqlTag)
 		clauseKey := getClauseKey(clauseTag)
-		// log.Println("fieldType:", fieldType)
-		// log.Println("clauseTag:", clauseTag)
-		// log.Println("clauseKey:", clauseKey)
 		var partialClause string
 		if clauseKey == Subquery {
-			partialClause, err = marshalWhereClause(field.Interface(), tableName)
+			if field.Kind() != reflect.Struct {
+				return "", ErrInvalidTag
+			}
+			partialClause, err = marshalWhereClause(field.Interface(), tableName, getJoiner(clauseTag))
 			if err != nil {
 				return "", err
 			}
@@ -602,7 +561,7 @@ func marshalWhereClause(v interface{}, tableName string) (string, error) {
 		}
 		if partialClause != "" {
 			if previousConditionExists {
-				buff.WriteString(andCondition)
+				buff.WriteString(joiner)
 			}
 			buff.WriteString(partialClause)
 			previousConditionExists = true
@@ -651,12 +610,20 @@ func marshalWhereClause(v interface{}, tableName string) (string, error) {
 // This will print whereClause as:
 // (Host_Name__c LIKE '%-db%' OR Host_Name__c LIKE '%-dbmgmt%') AND Role__r.Name IN ('db','dbmgmt') AND ((NOT Host_Name__c LIKE '%-core%') AND (NOT Host_Name__c LIKE '%-drp%')) AND Tech_Asset__r.Asset_Type_Asset_Type__c = 'SERVER' AND Last_Discovered_Date__c != null AND Num_of_CPU_Cores__c > 16
 func MarshalWhereClause(v interface{}) (string, error) {
-	return marshalWhereClause(v, "")
+	return marshalWhereClause(v, "", andCondition)
 }
 
 func getClauseKey(clauseTag string) string {
 	tagItems := strings.Split(clauseTag, ",")
 	return tagItems[0]
+}
+
+func getJoiner(clauseTag string) string {
+	tag := getTagValue(clauseTag, Joiner, "")
+	if strings.ToLower(tag) == "or" {
+		return orCondition
+	}
+	return andCondition
 }
 
 func getTagValue(clauseTag, key, defaultValue string) string {
@@ -817,6 +784,7 @@ func marshal(reflectedValue reflect.Value, reflectedType reflect.Type, childRela
 		var selectSubString strings.Builder
 		var selectValue interface{}
 		var whereValue interface{}
+		var whereJoiner string
 		var orderByValue interface{}
 		var limitValue interface{}
 		var offsetValue interface{}
@@ -864,6 +832,7 @@ func marshal(reflectedValue reflect.Value, reflectedType reflect.Type, childRela
 				}
 				whereClausePresent = true
 				whereValue = reflectedValue.Field(i).Interface()
+				whereJoiner = getJoiner(clauseTag)
 			case OrderByClause:
 				if orderByClausePresent {
 					return "", ErrMultipleOrderByClause
@@ -899,7 +868,7 @@ func marshal(reflectedValue reflect.Value, reflectedType reflect.Type, childRela
 				// This is child struct and we should use tableName as prefix for columns in where clause
 				relationName = tableName
 			}
-			subStr, err := marshalWhereClause(whereValue, relationName)
+			subStr, err := marshalWhereClause(whereValue, relationName, whereJoiner)
 			if err != nil {
 				return "", err
 			}
@@ -992,7 +961,6 @@ func marshal(reflectedValue reflect.Value, reflectedType reflect.Type, childRela
 // This will print soql query as:
 // SELECT Id,Name__c,NonNestedStruct__r.Name,NonNestedStruct__r.SomeValue__c FROM SM_Logical_Host__c WHERE (Host_Name__c LIKE '%-db%' OR Host_Name__c LIKE '%-dbmgmt%') AND Role__r.Name IN ('db','dbmgmt')
 func Marshal(v interface{}) (string, error) {
-	log.Println("t-margheim/ marshal called")
 	rv, rt, err := getReflectedValueAndType(v)
 	if err != nil {
 		return "", err

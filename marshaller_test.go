@@ -1474,5 +1474,147 @@ var _ = Describe("Marshaller", func() {
 				Expect(actualQuery).To(Equal(expectedQuery))
 			})
 		})
+
+		Context("when a struct with where clause with joiner=OR passed", func() {
+			BeforeEach(func() {
+				soqlStruct = orSOQLQuery{
+					WhereClause: positionOrDeptCriteria{
+						Title:      "Purchasing Manager",
+						Department: "Accounting",
+					},
+				}
+				expectedQuery = "SELECT Name,Email,Phone FROM Contact WHERE Title = 'Purchasing Manager' OR Department = 'Accounting'"
+			})
+
+			It("returns properly constructed soql query", func() {
+				Expect(err).ToNot(HaveOccurred())
+				Expect(actualQuery).To(Equal(expectedQuery))
+			})
+		})
+
+		Context("when a struct with where clause with joiner=or passed", func() {
+			BeforeEach(func() {
+				soqlStruct = orLowerSOQLQuery{
+					WhereClause: positionOrDeptCriteria{
+						Title:      "Purchasing Manager",
+						Department: "Accounting",
+					},
+				}
+				expectedQuery = "SELECT Name,Email,Phone FROM Contact WHERE Title = 'Purchasing Manager' OR Department = 'Accounting'"
+			})
+
+			It("returns properly constructed soql query", func() {
+				Expect(err).ToNot(HaveOccurred())
+				Expect(actualQuery).To(Equal(expectedQuery))
+			})
+		})
+
+		Context("when a struct with where clause with joiner=AND passed", func() {
+			BeforeEach(func() {
+				soqlStruct = andSOQLQuery{
+					WhereClause: positionOrDeptCriteria{
+						Title:      "Purchasing Manager",
+						Department: "Accounting",
+					},
+				}
+				expectedQuery = "SELECT Name,Email,Phone FROM Contact WHERE Title = 'Purchasing Manager' AND Department = 'Accounting'"
+			})
+
+			It("returns properly constructed soql query", func() {
+				Expect(err).ToNot(HaveOccurred())
+				Expect(actualQuery).To(Equal(expectedQuery))
+			})
+		})
+
+		Context("when a struct with where clause with joiner=ELSE (an invalid value) passed", func() {
+			BeforeEach(func() {
+				soqlStruct = invalidJoinerSOQLQuery{
+					WhereClause: positionOrDeptCriteria{
+						Title:      "Purchasing Manager",
+						Department: "Accounting",
+					},
+				}
+				expectedQuery = "SELECT Name,Email,Phone FROM Contact WHERE Title = 'Purchasing Manager' AND Department = 'Accounting'"
+			})
+
+			It("returns properly constructed soql query", func() {
+				Expect(err).ToNot(HaveOccurred())
+				Expect(actualQuery).To(Equal(expectedQuery))
+			})
+		})
+
+		Context("when a struct with where clause without a joiner passed", func() {
+			BeforeEach(func() {
+				soqlStruct = noJoinerSOQLQuery{
+					WhereClause: positionOrDeptCriteria{
+						Title:      "Purchasing Manager",
+						Department: "Accounting",
+					},
+				}
+				expectedQuery = "SELECT Name,Email,Phone FROM Contact WHERE Title = 'Purchasing Manager' AND Department = 'Accounting'"
+			})
+
+			It("returns properly constructed soql query", func() {
+				Expect(err).ToNot(HaveOccurred())
+				Expect(actualQuery).To(Equal(expectedQuery))
+			})
+		})
+
+		Context("when a struct with where clause with invalid subfilters passed in", func() {
+			BeforeEach(func() {
+				soqlStruct = soqlSubQueryInvalidTypeTestStruct{
+					WhereClause: invalidSubqueryCriteria{
+						Position: "Purchasing Manager",
+						Contactable: contactableCriteria{
+							EmailOK: emailCheck{
+								Email:         false,
+								EmailOptedOut: false,
+							},
+							PhoneOK: phoneCheck{
+								Phone:     false,
+								DoNotCall: false,
+							},
+						},
+					},
+				}
+				expectedQuery = "SELECT Name,Email,Phone FROM Contact WHERE (Title = 'Purchasing Manager' OR (Department = 'Accounting' AND Title LIKE '%Manager%')) AND ((Email != null AND HasOptedOutOfEmail = false) OR (Phone != null AND DoNotCall = false))"
+			})
+
+			It("returns error", func() {
+				Expect(err).To(Equal(ErrInvalidTag))
+			})
+		})
+
+		Context("when a struct with where clause with subfilters passed in", func() {
+			BeforeEach(func() {
+				soqlStruct = soqlSubQueryTestStruct{
+					WhereClause: queryCriteria{
+						Position: positionCriteria{
+							Title: "Purchasing Manager",
+							DepartmentManager: deptManagerCriteria{
+								Department: "Accounting",
+								Title:      []string{"Manager"},
+							},
+						},
+						Contactable: contactableCriteria{
+							EmailOK: emailCheck{
+								Email:         false,
+								EmailOptedOut: false,
+							},
+							PhoneOK: phoneCheck{
+								Phone:     false,
+								DoNotCall: false,
+							},
+						},
+					},
+				}
+				expectedQuery = "SELECT Name,Email,Phone FROM Contact WHERE (Title = 'Purchasing Manager' OR (Department = 'Accounting' AND Title LIKE '%Manager%')) AND ((Email != null AND HasOptedOutOfEmail = false) OR (Phone != null AND DoNotCall = false))"
+			})
+
+			It("returns properly constructed soql query", func() {
+				Expect(err).ToNot(HaveOccurred())
+				Expect(actualQuery).To(Equal(expectedQuery))
+			})
+		})
 	})
 })

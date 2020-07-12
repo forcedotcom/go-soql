@@ -307,3 +307,86 @@ type TestSoqlLimitAndOffsetStruct struct {
 	Limit        *int              `soql:"limitClause"`
 	Offset       *int              `soql:"offsetClause"`
 }
+
+// setups for OR and subfilter tests
+
+type orSOQLQuery struct {
+	SelectClause contact                `soql:"selectClause,tableName=Contact"`
+	WhereClause  positionOrDeptCriteria `soql:"whereClause,joiner=OR"`
+}
+
+type orLowerSOQLQuery struct {
+	SelectClause contact                `soql:"selectClause,tableName=Contact"`
+	WhereClause  positionOrDeptCriteria `soql:"whereClause,joiner=or"`
+}
+
+type andSOQLQuery struct {
+	SelectClause contact                `soql:"selectClause,tableName=Contact"`
+	WhereClause  positionOrDeptCriteria `soql:"whereClause,joiner=AND"`
+}
+
+type invalidJoinerSOQLQuery struct {
+	SelectClause contact                `soql:"selectClause,tableName=Contact"`
+	WhereClause  positionOrDeptCriteria `soql:"whereClause,joiner=not-a-real-value"`
+}
+
+type noJoinerSOQLQuery struct {
+	SelectClause contact                `soql:"selectClause,tableName=Contact"`
+	WhereClause  positionOrDeptCriteria `soql:"whereClause"`
+}
+
+type positionOrDeptCriteria struct {
+	Title      string `soql:"equalsOperator,fieldName=Title"`
+	Department string `soql:"equalsOperator,fieldName=Department"`
+}
+
+type contact struct {
+	Name  string `soql:"selectColumn,fieldName=Name" json:"Name"`
+	Email string `soql:"selectColumn,fieldName=Email" json:"Email"`
+	Phone string `soql:"selectColumn,fieldName=Phone" json:"Phone"`
+}
+
+type queryCriteria struct {
+	Position    positionCriteria    `soql:"subquery,joiner=OR"`
+	Contactable contactableCriteria `soql:"subquery,joiner=OR"`
+}
+
+type contactableCriteria struct {
+	EmailOK emailCheck `soql:"subquery,joiner=and"`
+	PhoneOK phoneCheck `soql:"subquery,joiner=and"`
+}
+
+type emailCheck struct {
+	Email         bool `soql:"nullOperator,fieldName=Email"`
+	EmailOptedOut bool `soql:"equalsOperator,fieldName=HasOptedOutOfEmail"`
+}
+
+type phoneCheck struct {
+	Phone     bool `soql:"nullOperator,fieldName=Phone"`
+	DoNotCall bool `soql:"equalsOperator,fieldName=DoNotCall"`
+}
+
+type positionCriteria struct {
+	Title             string              `soql:"equalsOperator,fieldName=Title"`
+	DepartmentManager deptManagerCriteria `soql:"subquery"`
+}
+
+type deptManagerCriteria struct {
+	Department string   `soql:"equalsOperator,fieldName=Department"`
+	Title      []string `soql:"likeOperator,fieldName=Title"`
+}
+
+type soqlSubQueryTestStruct struct {
+	SelectClause contact       `soql:"selectClause,tableName=Contact"`
+	WhereClause  queryCriteria `soql:"whereClause"`
+}
+
+type soqlSubQueryInvalidTypeTestStruct struct {
+	SelectClause contact                 `soql:"selectClause,tableName=Contact"`
+	WhereClause  invalidSubqueryCriteria `soql:"whereClause"`
+}
+
+type invalidSubqueryCriteria struct {
+	Position    string              `soql:"subquery,joiner=OR"`
+	Contactable contactableCriteria `soql:"subquery,joiner=OR"`
+}
