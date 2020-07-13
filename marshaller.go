@@ -535,12 +535,16 @@ func marshalWhereClause(v interface{}, tableName, joiner string) (string, error)
 			if field.Kind() != reflect.Struct {
 				return "", ErrInvalidTag
 			}
-			partialClause, err = marshalWhereClause(field.Interface(), tableName, getJoiner(clauseTag))
+			joiner, err := getJoiner(clauseTag)
+			if err != nil {
+				return "", err
+			}
+			partialClause, err = marshalWhereClause(field.Interface(), tableName, joiner)
 			if err != nil {
 				return "", err
 			}
 
-			partialClause = "(" + partialClause + ")"
+			partialClause = openBrace + partialClause + closeBrace
 		} else {
 			fieldName := getFieldName(clauseTag, fieldType.Name)
 			if fieldName == "" {
@@ -618,12 +622,16 @@ func getClauseKey(clauseTag string) string {
 	return tagItems[0]
 }
 
-func getJoiner(clauseTag string) string {
+func getJoiner(clauseTag string) (string, error) {
 	tag := getTagValue(clauseTag, Joiner, "")
-	if strings.ToLower(tag) == "or" {
-		return orCondition
+	switch strings.ToLower(tag) {
+	case "or":
+		return orCondition, nil
+	case "and", "":
+		return andCondition, nil
+	default:
+		return "", ErrInvalidTag
 	}
-	return andCondition
 }
 
 func getTagValue(clauseTag, key, defaultValue string) string {
@@ -832,7 +840,11 @@ func marshal(reflectedValue reflect.Value, reflectedType reflect.Type, childRela
 				}
 				whereClausePresent = true
 				whereValue = reflectedValue.Field(i).Interface()
-				whereJoiner = getJoiner(clauseTag)
+				var err error
+				whereJoiner, err = getJoiner(clauseTag)
+				if err != nil {
+					return "", err
+				}
 			case OrderByClause:
 				if orderByClausePresent {
 					return "", ErrMultipleOrderByClause

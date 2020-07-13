@@ -1534,12 +1534,10 @@ var _ = Describe("Marshaller", func() {
 						Department: "Accounting",
 					},
 				}
-				expectedQuery = "SELECT Name,Email,Phone FROM Contact WHERE Title = 'Purchasing Manager' AND Department = 'Accounting'"
 			})
 
-			It("returns properly constructed soql query", func() {
-				Expect(err).ToNot(HaveOccurred())
-				Expect(actualQuery).To(Equal(expectedQuery))
+			It("returns error", func() {
+				Expect(err).To(Equal(ErrInvalidTag))
 			})
 		})
 
