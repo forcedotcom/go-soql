@@ -532,8 +532,13 @@ func marshalWhereClause(v interface{}, tableName, joiner string) (string, error)
 		clauseKey := getClauseKey(clauseTag)
 		var partialClause string
 		if clauseKey == Subquery {
-			if field.Kind() != reflect.Struct {
+			if field.Kind() != reflect.Struct && field.Kind() != reflect.Ptr {
 				return "", ErrInvalidTag
+			}
+			if field.Kind() == reflect.Ptr {
+				if reflect.ValueOf(field.Interface()).IsNil() {
+					continue
+				}
 			}
 			joiner, err := getJoiner(clauseTag)
 			if err != nil {

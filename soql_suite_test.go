@@ -390,3 +390,13 @@ type invalidSubqueryCriteria struct {
 	Position    string              `soql:"subquery,joiner=OR"`
 	Contactable contactableCriteria `soql:"subquery,joiner=OR"`
 }
+
+type soqlSubQueryPtrTestStruct struct {
+	SelectClause contact             `soql:"selectClause,tableName=Contact"`
+	WhereClause  ptrSubqueryCriteria `soql:"whereClause"`
+}
+
+type ptrSubqueryCriteria struct {
+	Position    *positionCriteria     `soql:"subquery,joiner=OR"`
+	Contactable *contactableCriteria `soql:"subquery,joiner=OR"`
+}
