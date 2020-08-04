@@ -1583,6 +1583,31 @@ var _ = Describe("Marshaller", func() {
 			})
 		})
 
+		Context("when a struct with null pointer subquery passed in", func() {
+			BeforeEach(func() {
+				soqlStruct = soqlSubQueryPtrTestStruct{
+					WhereClause: ptrSubqueryCriteria{
+						Contactable: &contactableCriteria{
+							EmailOK: emailCheck{
+								Email:         false,
+								EmailOptedOut: false,
+							},
+							PhoneOK: phoneCheck{
+								Phone:     false,
+								DoNotCall: false,
+							},
+						},
+					},
+				}
+				expectedQuery = "SELECT Name,Email,Phone FROM Contact WHERE ((Email != null AND HasOptedOutOfEmail = false) OR (Phone != null AND DoNotCall = false))"
+			})
+
+			It("returns properly constructed soql query", func() {
+				Expect(err).ToNot(HaveOccurred())
+				Expect(actualQuery).To(Equal(expectedQuery))
+			})
+		})
+
 		Context("when a struct with where clause with subfilters passed in", func() {
 			BeforeEach(func() {
 				soqlStruct = soqlSubQueryTestStruct{

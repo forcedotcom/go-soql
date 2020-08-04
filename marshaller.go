@@ -535,6 +535,9 @@ func marshalWhereClause(v interface{}, tableName, joiner string) (string, error)
 			if field.Kind() != reflect.Struct && field.Kind() != reflect.Ptr {
 				return "", ErrInvalidTag
 			}
+			if field.Kind() == reflect.Ptr && reflect.ValueOf(field.Interface()).IsNil() {
+				continue
+			}
 			joiner, err := getJoiner(clauseTag)
 			if err != nil {
 				return "", err
