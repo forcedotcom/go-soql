@@ -492,6 +492,7 @@ var _ = Describe("Marshaller", func() {
 				currentTime = time.Now()
 				criteria = QueryCriteriaWithPtrDateTimeType{
 					CreatedDate: &currentTime,
+					ResolvedDate: nil,
 				}
 
 				expectedClause = "CreatedDate = " + currentTime.Format(DateFormat)

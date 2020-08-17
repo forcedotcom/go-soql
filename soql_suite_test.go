@@ -206,7 +206,8 @@ type QueryCriteriaWithDateTimeType struct {
 }
 
 type QueryCriteriaWithPtrDateTimeType struct {
-	CreatedDate *time.Time `soql:"equalsOperator,fieldName=CreatedDate"`
+	CreatedDate  *time.Time `soql:"equalsOperator,fieldName=CreatedDate"`
+	ResolvedDate *time.Time `soql:"equalsOperator,fieldName=ResolvedDate"`
 }
 
 type QueryCriteriaNumericComparisonOperators struct {
@@ -401,6 +402,6 @@ type soqlSubQueryPtrTestStruct struct {
 }
 
 type ptrSubqueryCriteria struct {
-	Position    *positionCriteria     `soql:"subquery,joiner=OR"`
+	Position    *positionCriteria    `soql:"subquery,joiner=OR"`
 	Contactable *contactableCriteria `soql:"subquery,joiner=OR"`
 }
