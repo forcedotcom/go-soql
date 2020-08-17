@@ -205,6 +205,10 @@ type QueryCriteriaWithDateTimeType struct {
 	CreatedDate time.Time `soql:"equalsOperator,fieldName=CreatedDate"`
 }
 
+type QueryCriteriaWithPtrDateTimeType struct {
+	CreatedDate *time.Time `soql:"equalsOperator,fieldName=CreatedDate"`
+}
+
 type QueryCriteriaNumericComparisonOperators struct {
 	NumOfCPUCores                    int `soql:"greaterThanOperator,fieldName=Num_of_CPU_Cores__c"`
 	PhysicalCPUCount                 int `soql:"lessThanOperator,fieldName=Physical_CPU_Count__c"`
