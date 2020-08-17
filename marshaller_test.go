@@ -485,6 +485,25 @@ var _ = Describe("Marshaller", func() {
 			})
 		})
 
+		Context("when all clauses are pointers to date time data types", func() {
+			var criteria QueryCriteriaWithPtrDateTimeType
+			var currentTime time.Time
+			BeforeEach(func() {
+				currentTime = time.Now()
+				criteria = QueryCriteriaWithPtrDateTimeType{
+					CreatedDate: &currentTime,
+				}
+
+				expectedClause = "CreatedDate = " + currentTime.Format(DateFormat)
+			})
+
+			It("returns properly formed clause", func() {
+				clause, err = MarshalWhereClause(criteria)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(clause).To(Equal(expectedClause))
+			})
+		})
+
 		Context("when all clauses are mixed data types and operators", func() {
 			var criteria QueryCriteriaWithMixedDataTypesAndOperators
 			var currentTime time.Time
