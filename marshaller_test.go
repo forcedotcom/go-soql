@@ -352,6 +352,97 @@ var _ = Describe("Marshaller", func() {
 			})
 		})
 
+		Context("When values for date literals are int", func() {
+			var criteria QueryCriteriaDateLiteralsOperatorsInt
+				BeforeEach(func() {
+					criteria = QueryCriteriaDateLiteralsOperatorsInt{
+						CreatedDate: 5,
+						ClosedDate: 10,
+					}
+					expectedClause = "CreatedDate > NEXT_N_DAYS:5 AND ClosedDate < NEXT_N_DAYS:10"
+				})
+				It("returns appropriate where clause", func() {
+					clause, err = MarshalWhereClause(criteria)
+					Expect(clause).To(Equal(expectedClause))
+				})
+			})
+
+		Context("When values for date literals are uint", func() {
+			var criteria QueryCriteriaDateLiteralsOperatorsUint
+				BeforeEach(func() {
+					criteria = QueryCriteriaDateLiteralsOperatorsUint{
+						CreatedDate: 5,
+						ClosedDate: 10,
+					}
+					expectedClause = "CreatedDate > NEXT_N_DAYS:5 AND ClosedDate < NEXT_N_DAYS:10"
+				})
+				It("returns appropriate where clause", func() {
+					clause, err = MarshalWhereClause(criteria)
+					Expect(clause).To(Equal(expectedClause))
+				})
+			})
+
+		Context("When values for date literals are wrong type", func() {
+			type QueryCriteriaDateLiteralsOperatorsWrong struct {
+				CreatedDate string `soql:"greaterNextNDaysOperator,fieldName=CreatedDate"`
+			}
+			var criteria QueryCriteriaDateLiteralsOperatorsWrong
+			BeforeEach(func() {
+				criteria = QueryCriteriaDateLiteralsOperatorsWrong{
+					CreatedDate: "5",
+				}
+			})
+			It("returns error", func() {
+				clause, err = MarshalWhereClause(criteria)
+				Expect(err).To(Equal(ErrInvalidTag))
+			})
+		})
+
+		Context("When values for date literals are pointers", func(){
+			var criteria QueryCriteriaDateLiteralsOperatorsPtr
+			Context("When there is only greaterNextNDaysOperator operator", func() {
+				BeforeEach(func() {
+					v := 5
+					criteria = QueryCriteriaDateLiteralsOperatorsPtr{
+						CreatedDate: &v,
+					}
+					expectedClause = "CreatedDate > NEXT_N_DAYS:5"
+				})
+				It("returns appropriate where clause", func() {
+					clause, err = MarshalWhereClause(criteria)
+					Expect(clause).To(Equal(expectedClause))
+				})
+			})
+			Context("When there is only lessNextNDaysOperator operator", func() {
+				BeforeEach(func() {
+					v := 10
+					criteria = QueryCriteriaDateLiteralsOperatorsPtr{
+						ClosedDate: &v,
+					}
+					expectedClause = "ClosedDate < NEXT_N_DAYS:10"
+				})
+				It("returns appropriate where clause", func() {
+					clause, err = MarshalWhereClause(criteria)
+					Expect(clause).To(Equal(expectedClause))
+				})
+			})
+			Context("When there are both operators", func() {
+				BeforeEach(func() {
+					v0 := 5
+					v1 := 10
+					criteria = QueryCriteriaDateLiteralsOperatorsPtr{
+						CreatedDate: &v0,
+						ClosedDate: &v1,
+					}
+					expectedClause = "CreatedDate > NEXT_N_DAYS:5 AND ClosedDate < NEXT_N_DAYS:10"
+				})
+				It("returns appropriate where clause", func() {
+					clause, err = MarshalWhereClause(criteria)
+					Expect(clause).To(Equal(expectedClause))
+				})
+			})
+		})
+
 		Context("when all clauses are signed integer data types", func() {
 			var criteria QueryCriteriaWithIntegerTypes
 			BeforeEach(func() {
@@ -523,10 +614,11 @@ var _ = Describe("Marshaller", func() {
 					MajorOSVersion:                   "20",
 					NumOfSuccessivePuppetRunFailures: 0,
 					LastRestart:                      currentTime,
+					ClosedDate:						  5,
 					NumHardDrives:                    &numHardDrives,
 				}
 
-				expectedClause = "BIOS_Type__c = '98.7.654a' AND Num_of_CPU_Cores__c > 32 AND NUMA_Enabled__c = true AND Pvt_Test_Fail_Count__c <= 256 AND Physical_CPU_Count__c >= 4 AND CreatedDate = " + currentTime.Format(DateFormat) + " AND Disable_Alerts__c = false AND Allocation_Latency__c < 10.5 AND Major_OS_Version__c = '20' AND Number_Of_Successive_Puppet_Run_Failures__c = 0 AND Last_Restart__c > " + currentTime.Format(DateFormat) + " AND NumHardDrives__c = 2"
+				expectedClause = "BIOS_Type__c = '98.7.654a' AND Num_of_CPU_Cores__c > 32 AND NUMA_Enabled__c = true AND Pvt_Test_Fail_Count__c <= 256 AND Physical_CPU_Count__c >= 4 AND CreatedDate = " + currentTime.Format(DateFormat) + " AND Disable_Alerts__c = false AND Allocation_Latency__c < 10.5 AND Major_OS_Version__c = '20' AND Number_Of_Successive_Puppet_Run_Failures__c = 0 AND Last_Restart__c > " + currentTime.Format(DateFormat) + " AND NumHardDrives__c = 2 AND ClosedDate > NEXT_N_DAYS:5"
 			})
 
 			It("returns properly formed clause", func() {
@@ -989,10 +1081,11 @@ var _ = Describe("Marshaller", func() {
 						AllocationLatency:                10.5,
 						MajorOSVersion:                   "20",
 						NumOfSuccessivePuppetRunFailures: 0,
+						ClosedDate: 					  5,
 						LastRestart:                      currentTime,
 					},
 				}
-				expectedQuery = "SELECT Id,Name__c,NonNestedStruct__r.Name,NonNestedStruct__r.SomeValue__c FROM SM_Logical_Host__c WHERE BIOS_Type__c = '98.7.654a' AND Num_of_CPU_Cores__c > 32 AND NUMA_Enabled__c = true AND Pvt_Test_Fail_Count__c <= 256 AND Physical_CPU_Count__c >= 4 AND CreatedDate = " + currentTime.Format(DateFormat) + " AND Disable_Alerts__c = false AND Allocation_Latency__c < 10.5 AND Major_OS_Version__c = '20' AND Number_Of_Successive_Puppet_Run_Failures__c = 0 AND Last_Restart__c > " + currentTime.Format(DateFormat)
+				expectedQuery = "SELECT Id,Name__c,NonNestedStruct__r.Name,NonNestedStruct__r.SomeValue__c FROM SM_Logical_Host__c WHERE BIOS_Type__c = '98.7.654a' AND Num_of_CPU_Cores__c > 32 AND NUMA_Enabled__c = true AND Pvt_Test_Fail_Count__c <= 256 AND Physical_CPU_Count__c >= 4 AND CreatedDate = " + currentTime.Format(DateFormat) + " AND Disable_Alerts__c = false AND Allocation_Latency__c < 10.5 AND Major_OS_Version__c = '20' AND Number_Of_Successive_Puppet_Run_Failures__c = 0 AND Last_Restart__c > " + currentTime.Format(DateFormat) + " AND ClosedDate > NEXT_N_DAYS:5"
 			})
 
 			It("returns properly constructed soql query", func() {
