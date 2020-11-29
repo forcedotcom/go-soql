@@ -217,6 +217,23 @@ type QueryCriteriaNumericComparisonOperators struct {
 	NumOfCoolanLogFiles              int `soql:"lessThanOrEqualsToOperator,fieldName=Num_Of_Coolan_Log_Files__c"`
 }
 
+type QueryCriteriaDateLiteralsOperatorsInt struct {
+	CreatedDate int `soql:"greaterNextNDaysOperator,fieldName=CreatedDate"`
+	ClosedDate 	int `soql:"lessNextNDaysOperator,fieldName=ClosedDate"`
+
+}
+
+type QueryCriteriaDateLiteralsOperatorsUint struct {
+	CreatedDate uint `soql:"greaterNextNDaysOperator,fieldName=CreatedDate"`
+	ClosedDate 	uint `soql:"lessNextNDaysOperator,fieldName=ClosedDate"`
+
+}
+
+type QueryCriteriaDateLiteralsOperatorsPtr struct {
+	CreatedDate *int `soql:"greaterNextNDaysOperator,fieldName=CreatedDate"`
+	ClosedDate 	*int `soql:"lessNextNDaysOperator,fieldName=ClosedDate"`
+}
+
 type QueryCriteriaWithMixedDataTypesAndOperators struct {
 	BIOSType                         string    `soql:"equalsOperator,fieldName=BIOS_Type__c"`
 	NumOfCPUCores                    int       `soql:"greaterThanOperator,fieldName=Num_of_CPU_Cores__c"`
@@ -231,6 +248,7 @@ type QueryCriteriaWithMixedDataTypesAndOperators struct {
 	LastRestart                      time.Time `soql:"greaterThanOperator,fieldName=Last_Restart__c"`
 	Memory                           *float64  `soql:"equalsOperator,fieldName=Memory__c"`
 	NumHardDrives                    *int      `soql:"equalsOperator,fieldName=NumHardDrives__c"`
+	ClosedDate 					     int 	   `soql:"greaterNextNDaysOperator,fieldName=ClosedDate"`
 }
 
 type InvalidSelectClause struct {

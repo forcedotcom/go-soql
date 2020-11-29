@@ -35,6 +35,8 @@ const (
 	greaterThanOrEqualsToOperator = " >= "
 	lessThanOperator              = " < "
 	lessThanOrEqualsToOperator    = " <= "
+	greaterNextNDaysOperator      = " > NEXT_N_DAYS:"
+	lessNextNDaysOperator         = " < NEXT_N_DAYS:"
 	selectKeyword                 = "SELECT "
 	whereKeyword                  = " WHERE "
 	fromKeyword                   = " FROM "
@@ -90,6 +92,10 @@ const (
 	LessThanOperator = "lessThanOperator"
 	// LessThanOrEqualsToOperator is the tag to be used for "<=" operator in where clause
 	LessThanOrEqualsToOperator = "lessThanOrEqualsToOperator"
+	//GreaterNextNDaysOperator is the tag to be used for "> NEXT_N_DAYS:n" operator in where clause
+	GreaterNextNDaysOperator = "greaterNextNDaysOperator"
+	//LessNextNDaysOperator is the tag to be used for "< NEXT_N_DAYS:n" operator in where clause
+	LessNextNDaysOperator = "lessNextNDaysOperator"
 
 	// Subquery is the tag to be used for a subquery in a where clause
 	Subquery = "subquery"
@@ -106,6 +112,8 @@ var clauseBuilderMap = map[string]func(v interface{}, fieldName string) (string,
 	GreaterThanOrEqualsToOperator: buildGreaterThanOrEqualsToClause,
 	LessThanOperator:              buildLessThanClause,
 	LessThanOrEqualsToOperator:    buildLessThanOrEqualsToClause,
+	GreaterNextNDaysOperator:      buildGreaterNextNDaysOperator,
+	LessNextNDaysOperator: 		   buildLessNextNDaysOperator,
 }
 
 var (
@@ -310,6 +318,38 @@ func constructComparisonClause(v interface{}, fieldName, operator string) (strin
 	}
 	return buff.String(), nil
 }
+
+func buildGreaterNextNDaysOperator (v interface{}, fieldName string) (string, error) {
+	return constructDateLiteralsClause(v, fieldName, greaterNextNDaysOperator)
+}
+
+func buildLessNextNDaysOperator (v interface{}, fieldName string) (string, error) {
+	return constructDateLiteralsClause(v, fieldName, lessNextNDaysOperator)
+}
+
+func constructDateLiteralsClause(v interface{}, fieldName string, operator string) (string, error) {
+	var buff strings.Builder
+	var value string
+
+	switch u := v.(type){
+	case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64:
+		value = fmt.Sprint(u)
+	case *int, *int8, *int16, *int32, *int64, *uint, *uint8, *uint16, *uint32, *uint64:
+		if !reflect.ValueOf(u).IsNil() {
+			value = fmt.Sprint(reflect.Indirect(reflect.ValueOf(u)))
+		}
+	default:
+		return buff.String(), ErrInvalidTag
+	}
+
+	if value != "" {
+		buff.WriteString(fieldName)
+		buff.WriteString(operator)
+		buff.WriteString(value)
+	}
+	return buff.String(), nil
+}
+
 
 func buildNullClause(v interface{}, fieldName string) (string, error) {
 	reflectedValue, _, err := getReflectedValueAndType(v)
