@@ -37,6 +37,8 @@ const (
 	lessThanOrEqualsToOperator    = " <= "
 	greaterNextNDaysOperator      = " > NEXT_N_DAYS:"
 	lessNextNDaysOperator         = " < NEXT_N_DAYS:"
+	greaterLastNDaysOperator      = " > LAST_N_DAYS:"
+	lessLastNDaysOperator         = " < LAST_N_DAYS:"
 	selectKeyword                 = "SELECT "
 	whereKeyword                  = " WHERE "
 	fromKeyword                   = " FROM "
@@ -96,6 +98,10 @@ const (
 	GreaterNextNDaysOperator = "greaterNextNDaysOperator"
 	//LessNextNDaysOperator is the tag to be used for "< NEXT_N_DAYS:n" operator in where clause
 	LessNextNDaysOperator = "lessNextNDaysOperator"
+	//GreaterLastNDaysOperator is the tag to be used for "> LAST_N_DAYS:n" operator in where clause
+	GreaterLastNDaysOperator = "greaterLastNDaysOperator"
+	//LessLastNDaysOperator is the tag to be used for "< LAST_N_DAYS:n" operator in where clause
+	LessLastNDaysOperator = "lessLastNDaysOperator"
 
 	// Subquery is the tag to be used for a subquery in a where clause
 	Subquery = "subquery"
@@ -114,6 +120,8 @@ var clauseBuilderMap = map[string]func(v interface{}, fieldName string) (string,
 	LessThanOrEqualsToOperator:    buildLessThanOrEqualsToClause,
 	GreaterNextNDaysOperator:      buildGreaterNextNDaysOperator,
 	LessNextNDaysOperator: 		   buildLessNextNDaysOperator,
+	GreaterLastNDaysOperator:      buildGreaterLastNDaysOperator,
+	LessLastNDaysOperator:         buildLessLastNDaysOperator,
 }
 
 var (
@@ -325,6 +333,14 @@ func buildGreaterNextNDaysOperator (v interface{}, fieldName string) (string, er
 
 func buildLessNextNDaysOperator (v interface{}, fieldName string) (string, error) {
 	return constructDateLiteralsClause(v, fieldName, lessNextNDaysOperator)
+}
+
+func buildGreaterLastNDaysOperator (v interface{}, fieldName string) (string, error) {
+	return constructDateLiteralsClause(v, fieldName, greaterLastNDaysOperator)
+}
+
+func buildLessLastNDaysOperator (v interface{}, fieldName string) (string, error) {
+	return constructDateLiteralsClause(v, fieldName, lessLastNDaysOperator)
 }
 
 func constructDateLiteralsClause(v interface{}, fieldName string, operator string) (string, error) {
