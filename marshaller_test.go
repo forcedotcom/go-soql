@@ -443,6 +443,50 @@ var _ = Describe("Marshaller", func() {
 			})
 		})
 
+		Context("when last_n_days literals are present", func() {
+			var criteria QueryCriteriaDateLastNDaysLiteralsOperatorsPtr
+			Context("when there is only lessLastNDaysOperator operator", func() {
+				BeforeEach(func() {
+					v1 := 10
+					criteria = QueryCriteriaDateLastNDaysLiteralsOperatorsPtr{
+						ClosedDate: &v1,
+					}
+					expectedClause = "ClosedDate < LAST_N_DAYS:10"
+				})
+				It("returns appropriate where clause", func() {
+					clause, err = MarshalWhereClause(criteria)
+					Expect(clause).To(Equal(expectedClause))
+				})
+				Context("when there is only greaterLastNDaysOperator operator", func() {
+					BeforeEach(func() {
+						v0 := 5
+						criteria = QueryCriteriaDateLastNDaysLiteralsOperatorsPtr{
+							CreatedDate: &v0,
+						}
+						expectedClause = "CreatedDate > LAST_N_DAYS:5"
+					})
+					It("returns appropriate where clause", func() {
+						clause, err = MarshalWhereClause(criteria)
+						Expect(clause).To(Equal(expectedClause))
+					})
+					Context("when there are both greaterLastNDaysOperator and lessLastNDaysOperator operators", func() {
+						BeforeEach(func() {
+							v0 := 5
+							v1 := 10
+							criteria = QueryCriteriaDateLastNDaysLiteralsOperatorsPtr{
+								CreatedDate: &v0,
+								ClosedDate:  &v1,
+							}
+							expectedClause = "CreatedDate > LAST_N_DAYS:5 AND ClosedDate < LAST_N_DAYS:10"
+						})
+						It("returns appropriate where clause", func() {
+							clause, err = MarshalWhereClause(criteria)
+							Expect(clause).To(Equal(expectedClause))
+						})
+					})
+				})
+			})
+		})
 		Context("when all clauses are signed integer data types", func() {
 			var criteria QueryCriteriaWithIntegerTypes
 			BeforeEach(func() {

@@ -220,18 +220,21 @@ type QueryCriteriaNumericComparisonOperators struct {
 type QueryCriteriaDateLiteralsOperatorsInt struct {
 	CreatedDate int `soql:"greaterNextNDaysOperator,fieldName=CreatedDate"`
 	ClosedDate 	int `soql:"lessNextNDaysOperator,fieldName=ClosedDate"`
-
 }
 
 type QueryCriteriaDateLiteralsOperatorsUint struct {
 	CreatedDate uint `soql:"greaterNextNDaysOperator,fieldName=CreatedDate"`
 	ClosedDate 	uint `soql:"lessNextNDaysOperator,fieldName=ClosedDate"`
-
 }
 
 type QueryCriteriaDateLiteralsOperatorsPtr struct {
 	CreatedDate *int `soql:"greaterNextNDaysOperator,fieldName=CreatedDate"`
 	ClosedDate 	*int `soql:"lessNextNDaysOperator,fieldName=ClosedDate"`
+}
+
+type QueryCriteriaDateLastNDaysLiteralsOperatorsPtr struct {
+	CreatedDate *int `soql:"greaterLastNDaysOperator,fieldName=CreatedDate"`
+	ClosedDate 	*int `soql:"lessLastNDaysOperator,fieldName=ClosedDate"`
 }
 
 type QueryCriteriaWithMixedDataTypesAndOperators struct {
