@@ -31,8 +31,10 @@ Start with using `soql` tags on members of your golang structs. `soql` is the ma
     greaterThanOrEqualsToOperator // is the tag to be used for ">=" operator in where clause. It should be used on members of struct that have been tagged with whereClause.
     lessThanOrEqualsToOperator // is the tag to be used for "<=" operator in where clause. It should be used on members of struct that have been tagged with whereClause.
     greaterNextNDaysOperator // is the tag to be used for "> NEXT_N_DAYS:n" operator in where clause
+    equalsNextNDaysOperator // is the tag to be used for "= NEXT_N_DAYS:n" operator in where clause
     lessNextNDaysOperator // is the tag to be used for "< NEXT_N_DAYS:n" operator in where clause
     greaterLastNDaysOperator // is the tag to be used for "> LAST_N_DAYS:n" operator in where clause
+    equalsLastNDaysOperator // is the tag to be used for "= LAST_N_DAYS:n" operator in where clause
     lessLastNDaysOperator // is the tag to be used for "< LAST_N_DAYS:n" operator in where clause
 ```
 
@@ -486,6 +488,16 @@ type sub struct {
    ```
     Fields that are pointers will only be included if they are initialized else they will be skipped from WHERE clause.
     
+1. `equalsNextNDaysOperator`: This tag is used on members which should be considered to field expressions in where clause using `=` comparison operator and `NEXT_N_DAYS` date literal. This tag should be used on member of type `int`,  `int8`, `int16`, `int32`, `int64`, `uint`, `uint8`, `uint16`, `uint32`, `uint64`, `*int`, `*int8`, `*int16`, `*int32`, `*int64`, `*uint`, `*uint8`, `*uint16`, `*uint32`, `*uint64`. Used on any other type, `ErrInvalidTag` error will be returned. Example will clarify this more:
+
+   ```
+   whereClause, _ := MarshalWhereClause(QueryCriteria{
+       CreatedDate: 5,
+   })
+   // whereClause will be: WHERE CreatedDate = NEXT_N_DAYS:5
+   ```
+    Fields that are pointers will only be included if they are initialized else they will be skipped from WHERE clause.
+    
 1. `lessNextNDaysOperator`: This tag is used on members which should be considered to field expressions in where clause using `<` comparison operator and `NEXT_N_DAYS` date literal. This tag should be used on member of type `int`,  `int8`, `int16`, `int32`, `int64`, `uint`, `uint8`, `uint16`, `uint32`, `uint64`, `*int`, `*int8`, `*int16`, `*int32`, `*int64`, `*uint`, `*uint8`, `*uint16`, `*uint32`, `*uint64`. Used on any other type, `ErrInvalidTag` error will be returned. Example will clarify this more:
 
    ```
@@ -506,6 +518,16 @@ type sub struct {
    ```
     Fields that are pointers will only be included if they are initialized else they will be skipped from WHERE clause.
     
+1. `equalsLastNDaysOperator`: This tag is used on members which should be considered to field expressions in where clause using `=` comparison operator and `LAST_N_DAYS` date literal. This tag should be used on member of type `int`,  `int8`, `int16`, `int32`, `int64`, `uint`, `uint8`, `uint16`, `uint32`, `uint64`, `*int`, `*int8`, `*int16`, `*int32`, `*int64`, `*uint`, `*uint8`, `*uint16`, `*uint32`, `*uint64`. Used on any other type, `ErrInvalidTag` error will be returned. Example will clarify this more:
+
+   ```
+   whereClause, _ := MarshalWhereClause(QueryCriteria{
+       CreatedDate: 5,
+   })
+   // whereClause will be: WHERE CreatedDate = LAST_N_DAYS:5
+   ```
+    Fields that are pointers will only be included if they are initialized else they will be skipped from WHERE clause.
+   
 1. `lessLastNDaysOperator`: This tag is used on members which should be considered to field expressions in where clause using `<` comparison operator and `LAST_N_DAYS` date literal. This tag should be used on member of type `int`,  `int8`, `int16`, `int32`, `int64`, `uint`, `uint8`, `uint16`, `uint32`, `uint64`, `*int`, `*int8`, `*int16`, `*int32`, `*int64`, `*uint`, `*uint8`, `*uint16`, `*uint32`, `*uint64`. Used on any other type, `ErrInvalidTag` error will be returned. Example will clarify this more:
 
    ```

@@ -36,8 +36,10 @@ const (
 	lessThanOperator              = " < "
 	lessThanOrEqualsToOperator    = " <= "
 	greaterNextNDaysOperator      = " > NEXT_N_DAYS:"
+	equalsNextNDaysOperator       = " = NEXT_N_DAYS:"
 	lessNextNDaysOperator         = " < NEXT_N_DAYS:"
 	greaterLastNDaysOperator      = " > LAST_N_DAYS:"
+	equalsLastNDaysOperator       = " = LAST_N_DAYS:"
 	lessLastNDaysOperator         = " < LAST_N_DAYS:"
 	selectKeyword                 = "SELECT "
 	whereKeyword                  = " WHERE "
@@ -96,10 +98,14 @@ const (
 	LessThanOrEqualsToOperator = "lessThanOrEqualsToOperator"
 	//GreaterNextNDaysOperator is the tag to be used for "> NEXT_N_DAYS:n" operator in where clause
 	GreaterNextNDaysOperator = "greaterNextNDaysOperator"
+	//EqualsNextNDaysOperator is the tag to be used for "= NEXT_N_DAYS:n" operator in where clause
+	EqualsNextNDaysOperator = "equalsNextNDaysOperator"
 	//LessNextNDaysOperator is the tag to be used for "< NEXT_N_DAYS:n" operator in where clause
 	LessNextNDaysOperator = "lessNextNDaysOperator"
 	//GreaterLastNDaysOperator is the tag to be used for "> LAST_N_DAYS:n" operator in where clause
 	GreaterLastNDaysOperator = "greaterLastNDaysOperator"
+	//EqualsLastNDaysOperator is the tag to be used for "= LAST_N_DAYS:n" operator in where clause
+	EqualsLastNDaysOperator = "equalsLastNDaysOperator"
 	//LessLastNDaysOperator is the tag to be used for "< LAST_N_DAYS:n" operator in where clause
 	LessLastNDaysOperator = "lessLastNDaysOperator"
 
@@ -119,8 +125,10 @@ var clauseBuilderMap = map[string]func(v interface{}, fieldName string) (string,
 	LessThanOperator:              buildLessThanClause,
 	LessThanOrEqualsToOperator:    buildLessThanOrEqualsToClause,
 	GreaterNextNDaysOperator:      buildGreaterNextNDaysOperator,
+	EqualsNextNDaysOperator:       buildEqualsNextNDaysOperator,
 	LessNextNDaysOperator: 		   buildLessNextNDaysOperator,
 	GreaterLastNDaysOperator:      buildGreaterLastNDaysOperator,
+	EqualsLastNDaysOperator:       buildEqualsLastNDaysOperator,
 	LessLastNDaysOperator:         buildLessLastNDaysOperator,
 }
 
@@ -331,12 +339,20 @@ func buildGreaterNextNDaysOperator (v interface{}, fieldName string) (string, er
 	return constructDateLiteralsClause(v, fieldName, greaterNextNDaysOperator)
 }
 
+func buildEqualsNextNDaysOperator (v interface{}, fieldName string) (string, error) {
+	return constructDateLiteralsClause(v, fieldName, equalsNextNDaysOperator)
+}
+
 func buildLessNextNDaysOperator (v interface{}, fieldName string) (string, error) {
 	return constructDateLiteralsClause(v, fieldName, lessNextNDaysOperator)
 }
 
 func buildGreaterLastNDaysOperator (v interface{}, fieldName string) (string, error) {
 	return constructDateLiteralsClause(v, fieldName, greaterLastNDaysOperator)
+}
+
+func buildEqualsLastNDaysOperator (v interface{}, fieldName string) (string, error) {
+	return constructDateLiteralsClause(v, fieldName, equalsLastNDaysOperator)
 }
 
 func buildLessLastNDaysOperator (v interface{}, fieldName string) (string, error) {

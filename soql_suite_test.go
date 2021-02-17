@@ -229,11 +229,13 @@ type QueryCriteriaDateLiteralsOperatorsUint struct {
 
 type QueryCriteriaDateLiteralsOperatorsPtr struct {
 	CreatedDate *int `soql:"greaterNextNDaysOperator,fieldName=CreatedDate"`
+	OtherDate   *int `soql:"equalsNextNDaysOperator,fieldName=OtherDate"`
 	ClosedDate 	*int `soql:"lessNextNDaysOperator,fieldName=ClosedDate"`
 }
 
 type QueryCriteriaDateLastNDaysLiteralsOperatorsPtr struct {
 	CreatedDate *int `soql:"greaterLastNDaysOperator,fieldName=CreatedDate"`
+	OtherDate   *int `soql:"equalsLastNDaysOperator,fieldName=OtherDate"`
 	ClosedDate 	*int `soql:"lessLastNDaysOperator,fieldName=ClosedDate"`
 }
 
