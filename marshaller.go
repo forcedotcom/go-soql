@@ -144,7 +144,7 @@ var clauseBuilderMap = map[string]func(v interface{}, fieldName string) (string,
 	LessThanOrEqualsToOperator:    buildLessThanOrEqualsToClause,
 	GreaterNextNDaysOperator:      buildGreaterNextNDaysOperator,
 	EqualsNextNDaysOperator:       buildEqualsNextNDaysOperator,
-	LessNextNDaysOperator: 		   buildLessNextNDaysOperator,
+	LessNextNDaysOperator:         buildLessNextNDaysOperator,
 	GreaterLastNDaysOperator:      buildGreaterLastNDaysOperator,
 	EqualsLastNDaysOperator:       buildEqualsLastNDaysOperator,
 	LessLastNDaysOperator:         buildLessLastNDaysOperator,
@@ -371,27 +371,27 @@ func constructComparisonClause(v interface{}, fieldName, operator string) (strin
 	return buff.String(), nil
 }
 
-func buildGreaterNextNDaysOperator (v interface{}, fieldName string) (string, error) {
+func buildGreaterNextNDaysOperator(v interface{}, fieldName string) (string, error) {
 	return constructDateLiteralsClause(v, fieldName, greaterNextNDaysOperator)
 }
 
-func buildEqualsNextNDaysOperator (v interface{}, fieldName string) (string, error) {
+func buildEqualsNextNDaysOperator(v interface{}, fieldName string) (string, error) {
 	return constructDateLiteralsClause(v, fieldName, equalsNextNDaysOperator)
 }
 
-func buildLessNextNDaysOperator (v interface{}, fieldName string) (string, error) {
+func buildLessNextNDaysOperator(v interface{}, fieldName string) (string, error) {
 	return constructDateLiteralsClause(v, fieldName, lessNextNDaysOperator)
 }
 
-func buildGreaterLastNDaysOperator (v interface{}, fieldName string) (string, error) {
+func buildGreaterLastNDaysOperator(v interface{}, fieldName string) (string, error) {
 	return constructDateLiteralsClause(v, fieldName, greaterLastNDaysOperator)
 }
 
-func buildEqualsLastNDaysOperator (v interface{}, fieldName string) (string, error) {
+func buildEqualsLastNDaysOperator(v interface{}, fieldName string) (string, error) {
 	return constructDateLiteralsClause(v, fieldName, equalsLastNDaysOperator)
 }
 
-func buildLessLastNDaysOperator (v interface{}, fieldName string) (string, error) {
+func buildLessLastNDaysOperator(v interface{}, fieldName string) (string, error) {
 	return constructDateLiteralsClause(v, fieldName, lessLastNDaysOperator)
 }
 
@@ -399,7 +399,7 @@ func constructDateLiteralsClause(v interface{}, fieldName string, operator strin
 	var buff strings.Builder
 	var value string
 
-	switch u := v.(type){
+	switch u := v.(type) {
 	case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64:
 		value = fmt.Sprint(u)
 	case *int, *int8, *int16, *int32, *int64, *uint, *uint8, *uint16, *uint32, *uint64:
@@ -417,7 +417,6 @@ func constructDateLiteralsClause(v interface{}, fieldName string, operator strin
 	}
 	return buff.String(), nil
 }
-
 
 func buildNullClause(v interface{}, fieldName string) (string, error) {
 	reflectedValue, _, err := getReflectedValueAndType(v)
