@@ -78,6 +78,20 @@ var _ = Describe("Marshaller", func() {
 						Expect(clause).To(Equal(expectedClause))
 					})
 				})
+
+				Context("when there are special characters in values", func() {
+					BeforeEach(func() {
+						critetria = TestQueryCriteria{
+							IncludeNamePattern: []string{"-db'_%\\"},
+							AssetType:          "-db'_%\\",
+						}
+						expectedClause = `Host_Name__c LIKE '%-db\'\_\%\\%' AND Tech_Asset__r.Asset_Type_Asset_Type__c = '-db\'_%\\'`
+					})
+
+					It("returns appropriate where clause by escaping special characters", func() {
+						Expect(clause).To(Equal(expectedClause))
+					})
+				})
 			})
 
 			Context("when only not like clause is populated", func() {
