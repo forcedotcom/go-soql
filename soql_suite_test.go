@@ -219,24 +219,24 @@ type QueryCriteriaNumericComparisonOperators struct {
 
 type QueryCriteriaDateLiteralsOperatorsInt struct {
 	CreatedDate int `soql:"greaterNextNDaysOperator,fieldName=CreatedDate"`
-	ClosedDate 	int `soql:"lessNextNDaysOperator,fieldName=ClosedDate"`
+	ClosedDate  int `soql:"lessNextNDaysOperator,fieldName=ClosedDate"`
 }
 
 type QueryCriteriaDateLiteralsOperatorsUint struct {
 	CreatedDate uint `soql:"greaterNextNDaysOperator,fieldName=CreatedDate"`
-	ClosedDate 	uint `soql:"lessNextNDaysOperator,fieldName=ClosedDate"`
+	ClosedDate  uint `soql:"lessNextNDaysOperator,fieldName=ClosedDate"`
 }
 
 type QueryCriteriaDateLiteralsOperatorsPtr struct {
 	CreatedDate *int `soql:"greaterNextNDaysOperator,fieldName=CreatedDate"`
 	OtherDate   *int `soql:"equalsNextNDaysOperator,fieldName=OtherDate"`
-	ClosedDate 	*int `soql:"lessNextNDaysOperator,fieldName=ClosedDate"`
+	ClosedDate  *int `soql:"lessNextNDaysOperator,fieldName=ClosedDate"`
 }
 
 type QueryCriteriaDateLastNDaysLiteralsOperatorsPtr struct {
 	CreatedDate *int `soql:"greaterLastNDaysOperator,fieldName=CreatedDate"`
 	OtherDate   *int `soql:"equalsLastNDaysOperator,fieldName=OtherDate"`
-	ClosedDate 	*int `soql:"lessLastNDaysOperator,fieldName=ClosedDate"`
+	ClosedDate  *int `soql:"lessLastNDaysOperator,fieldName=ClosedDate"`
 }
 
 type QueryCriteriaWithMixedDataTypesAndOperators struct {
@@ -253,7 +253,7 @@ type QueryCriteriaWithMixedDataTypesAndOperators struct {
 	LastRestart                      time.Time `soql:"greaterThanOperator,fieldName=Last_Restart__c"`
 	Memory                           *float64  `soql:"equalsOperator,fieldName=Memory__c"`
 	NumHardDrives                    *int      `soql:"equalsOperator,fieldName=NumHardDrives__c"`
-	ClosedDate 					     int 	   `soql:"greaterNextNDaysOperator,fieldName=ClosedDate"`
+	ClosedDate                       int       `soql:"greaterNextNDaysOperator,fieldName=ClosedDate"`
 }
 
 type InvalidSelectClause struct {

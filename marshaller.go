@@ -22,6 +22,24 @@ const (
 	andCondition                  = " AND "
 	singleQuote                   = "'"
 	safeSingleQuote               = "\\'"
+	doubleQuote                   = "\""
+	safeDoubleQuote               = "\\\""
+	backslash                     = "\\"
+	safeBackslash                 = "\\\\"
+	newLine                       = "\n"
+	safeNewLine                   = "\\n"
+	carriageReturn                = "\r"
+	safeCarriageReturn            = "\\r"
+	tab                           = "\t"
+	safeTab                       = "\\t"
+	bell                          = "\b"
+	safeBell                      = "\\b"
+	formFeed                      = "\f"
+	safeFormFeed                  = "\\f"
+	underscore                    = "_"
+	safeUnderscore                = "\\_"
+	percentSign                   = "%"
+	safePercentSign               = "\\%"
 	comma                         = ","
 	notOperator                   = "NOT "
 	openLike                      = " LIKE '%"
@@ -126,7 +144,7 @@ var clauseBuilderMap = map[string]func(v interface{}, fieldName string) (string,
 	LessThanOrEqualsToOperator:    buildLessThanOrEqualsToClause,
 	GreaterNextNDaysOperator:      buildGreaterNextNDaysOperator,
 	EqualsNextNDaysOperator:       buildEqualsNextNDaysOperator,
-	LessNextNDaysOperator: 		   buildLessNextNDaysOperator,
+	LessNextNDaysOperator:         buildLessNextNDaysOperator,
 	GreaterLastNDaysOperator:      buildGreaterLastNDaysOperator,
 	EqualsLastNDaysOperator:       buildEqualsLastNDaysOperator,
 	LessLastNDaysOperator:         buildLessLastNDaysOperator,
@@ -183,9 +201,27 @@ type Order struct {
 	IsDesc bool
 }
 
-func sanitizeString(str string) string {
-	return strings.ReplaceAll(str, singleQuote, safeSingleQuote)
+// https://developer.salesforce.com/docs/atlas.en-us.soql_sosl.meta/soql_sosl/sforce_api_calls_soql_select_quotedstringescapes.htm
+var sanitizeCharacters = []string{
+	singleQuote, safeSingleQuote,
+	doubleQuote, safeDoubleQuote,
+	backslash, safeBackslash,
+	newLine, safeNewLine,
+	carriageReturn, safeCarriageReturn,
+	tab, safeTab,
+	bell, safeBell,
+	formFeed, safeFormFeed,
 }
+
+var sanitizeReplacer = strings.NewReplacer(sanitizeCharacters...)
+
+var sanitizeLikeCharacters = append(
+	sanitizeCharacters,
+	underscore, safeUnderscore,
+	percentSign, safePercentSign,
+)
+
+var sanitizeLikeReplacer = strings.NewReplacer(sanitizeLikeCharacters...)
 
 func buildLikeClause(v interface{}, fieldName string) (string, error) {
 	return constructLikeClause(v, fieldName, false)
@@ -218,7 +254,7 @@ func constructLikeClause(v interface{}, fieldName string, exclude bool) (string,
 		}
 		buff.WriteString(fieldName)
 		buff.WriteString(openLike)
-		buff.WriteString(sanitizeString(pattern))
+		buff.WriteString(sanitizeLikeReplacer.Replace(pattern))
 		buff.WriteString(closeLike)
 		if exclude {
 			buff.WriteString(closeBrace)
@@ -260,7 +296,7 @@ func buildInClause(v interface{}, fieldName string) (string, error) {
 		}
 		if useSingleQuotes {
 			buff.WriteString(singleQuote)
-			buff.WriteString(sanitizeString(item))
+			buff.WriteString(sanitizeReplacer.Replace(item))
 			buff.WriteString(singleQuote)
 		} else {
 			buff.WriteString(item)
@@ -326,7 +362,7 @@ func constructComparisonClause(v interface{}, fieldName, operator string) (strin
 		buff.WriteString(operator)
 		if useSingleQuotes {
 			buff.WriteString(singleQuote)
-			buff.WriteString(sanitizeString(value))
+			buff.WriteString(sanitizeReplacer.Replace(value))
 			buff.WriteString(singleQuote)
 		} else {
 			buff.WriteString(value)
@@ -335,27 +371,27 @@ func constructComparisonClause(v interface{}, fieldName, operator string) (strin
 	return buff.String(), nil
 }
 
-func buildGreaterNextNDaysOperator (v interface{}, fieldName string) (string, error) {
+func buildGreaterNextNDaysOperator(v interface{}, fieldName string) (string, error) {
 	return constructDateLiteralsClause(v, fieldName, greaterNextNDaysOperator)
 }
 
-func buildEqualsNextNDaysOperator (v interface{}, fieldName string) (string, error) {
+func buildEqualsNextNDaysOperator(v interface{}, fieldName string) (string, error) {
 	return constructDateLiteralsClause(v, fieldName, equalsNextNDaysOperator)
 }
 
-func buildLessNextNDaysOperator (v interface{}, fieldName string) (string, error) {
+func buildLessNextNDaysOperator(v interface{}, fieldName string) (string, error) {
 	return constructDateLiteralsClause(v, fieldName, lessNextNDaysOperator)
 }
 
-func buildGreaterLastNDaysOperator (v interface{}, fieldName string) (string, error) {
+func buildGreaterLastNDaysOperator(v interface{}, fieldName string) (string, error) {
 	return constructDateLiteralsClause(v, fieldName, greaterLastNDaysOperator)
 }
 
-func buildEqualsLastNDaysOperator (v interface{}, fieldName string) (string, error) {
+func buildEqualsLastNDaysOperator(v interface{}, fieldName string) (string, error) {
 	return constructDateLiteralsClause(v, fieldName, equalsLastNDaysOperator)
 }
 
-func buildLessLastNDaysOperator (v interface{}, fieldName string) (string, error) {
+func buildLessLastNDaysOperator(v interface{}, fieldName string) (string, error) {
 	return constructDateLiteralsClause(v, fieldName, lessLastNDaysOperator)
 }
 
@@ -363,7 +399,7 @@ func constructDateLiteralsClause(v interface{}, fieldName string, operator strin
 	var buff strings.Builder
 	var value string
 
-	switch u := v.(type){
+	switch u := v.(type) {
 	case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64:
 		value = fmt.Sprint(u)
 	case *int, *int8, *int16, *int32, *int64, *uint, *uint8, *uint16, *uint32, *uint64:
@@ -381,7 +417,6 @@ func constructDateLiteralsClause(v interface{}, fieldName string, operator strin
 	}
 	return buff.String(), nil
 }
-
 
 func buildNullClause(v interface{}, fieldName string) (string, error) {
 	reflectedValue, _, err := getReflectedValueAndType(v)
