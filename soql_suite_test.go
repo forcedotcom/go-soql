@@ -228,15 +228,19 @@ type QueryCriteriaDateLiteralsOperatorsUint struct {
 }
 
 type QueryCriteriaDateLiteralsOperatorsPtr struct {
-	CreatedDate *int `soql:"greaterNextNDaysOperator,fieldName=CreatedDate"`
-	OtherDate   *int `soql:"equalsNextNDaysOperator,fieldName=OtherDate"`
-	ClosedDate  *int `soql:"lessNextNDaysOperator,fieldName=ClosedDate"`
+	CreatedDate   *int `soql:"greaterNextNDaysOperator,fieldName=CreatedDate"`
+	OtherDate     *int `soql:"equalsNextNDaysOperator,fieldName=OtherDate"`
+	ClosedDate    *int `soql:"lessNextNDaysOperator,fieldName=ClosedDate"`
+	ScheduledDate *int `soql:"lessOrEqualNextNDaysOperator,fieldName=ScheduledDate"`
+	DeliveredDate *int `soql:"greaterOrEqualNextNDaysOperator,fieldName=DeliveredDate"`
 }
 
 type QueryCriteriaDateLastNDaysLiteralsOperatorsPtr struct {
-	CreatedDate *int `soql:"greaterLastNDaysOperator,fieldName=CreatedDate"`
-	OtherDate   *int `soql:"equalsLastNDaysOperator,fieldName=OtherDate"`
-	ClosedDate  *int `soql:"lessLastNDaysOperator,fieldName=ClosedDate"`
+	CreatedDate   *int `soql:"greaterLastNDaysOperator,fieldName=CreatedDate"`
+	OtherDate     *int `soql:"equalsLastNDaysOperator,fieldName=OtherDate"`
+	ClosedDate    *int `soql:"lessLastNDaysOperator,fieldName=ClosedDate"`
+	ScheduledDate *int `soql:"lessOrEqualLastNDaysOperator,fieldName=ScheduledDate"`
+	DeliveredDate *int `soql:"greaterOrEqualLastNDaysOperator,fieldName=DeliveredDate"`
 }
 
 type QueryCriteriaWithMixedDataTypesAndOperators struct {
