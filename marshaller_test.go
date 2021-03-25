@@ -427,6 +427,19 @@ var _ = Describe("Marshaller", func() {
 					Expect(clause).To(Equal(expectedClause))
 				})
 			})
+			Context("When there is only greaterOrEqualNextNDaysOperator operator", func() {
+				BeforeEach(func() {
+					v := 5
+					criteria = QueryCriteriaDateLiteralsOperatorsPtr{
+						DeliveredDate: &v,
+					}
+					expectedClause = "DeliveredDate >= NEXT_N_DAYS:5"
+				})
+				It("returns appropriate where clause", func() {
+					clause, err = MarshalWhereClause(criteria)
+					Expect(clause).To(Equal(expectedClause))
+				})
+			})
 			Context("when there is only greaterLastNDaysOperator operator", func() {
 				BeforeEach(func() {
 					v0 := 5
@@ -453,17 +466,34 @@ var _ = Describe("Marshaller", func() {
 					Expect(clause).To(Equal(expectedClause))
 				})
 			})
+			Context("When there is only lessOrEqualNextNDaysOperator operator", func() {
+				BeforeEach(func() {
+					v := 10
+					criteria = QueryCriteriaDateLiteralsOperatorsPtr{
+						ScheduledDate: &v,
+					}
+					expectedClause = "ScheduledDate <= NEXT_N_DAYS:10"
+				})
+				It("returns appropriate where clause", func() {
+					clause, err = MarshalWhereClause(criteria)
+					Expect(clause).To(Equal(expectedClause))
+				})
+			})
 			Context("When there are all operators", func() {
 				BeforeEach(func() {
 					v0 := 5
 					v1 := 10
-					v3 := 15
+					v2 := 15
+					v3 := 20
+					v4 := 25
 					criteria = QueryCriteriaDateLiteralsOperatorsPtr{
 						CreatedDate: &v0,
-						OtherDate:   &v3,
-						ClosedDate:  &v1,
+						OtherDate: &v2,
+						ClosedDate: &v1,
+						ScheduledDate: &v3,
+						DeliveredDate: &v4,
 					}
-					expectedClause = "CreatedDate > NEXT_N_DAYS:5 AND OtherDate = NEXT_N_DAYS:15 AND ClosedDate < NEXT_N_DAYS:10"
+					expectedClause = "CreatedDate > NEXT_N_DAYS:5 AND OtherDate = NEXT_N_DAYS:15 AND ClosedDate < NEXT_N_DAYS:10 AND ScheduledDate <= NEXT_N_DAYS:20 AND DeliveredDate >= NEXT_N_DAYS:25"
 				})
 				It("returns appropriate where clause", func() {
 					clause, err = MarshalWhereClause(criteria)
@@ -486,6 +516,19 @@ var _ = Describe("Marshaller", func() {
 					clause, err = MarshalWhereClause(criteria)
 					Expect(clause).To(Equal(expectedClause))
 				})
+				Context("when there is only lessOrEqualLastNDaysOperator operator", func() {
+					BeforeEach(func() {
+						v1 := 10
+						criteria = QueryCriteriaDateLastNDaysLiteralsOperatorsPtr{
+							ScheduledDate: &v1,
+						}
+						expectedClause = "ScheduledDate <= LAST_N_DAYS:10"
+					})
+					It("returns appropriate where clause", func() {
+						clause, err = MarshalWhereClause(criteria)
+						Expect(clause).To(Equal(expectedClause))
+					})
+				})
 				Context("when there is only greaterLastNDaysOperator operator", func() {
 					BeforeEach(func() {
 						v0 := 5
@@ -493,6 +536,19 @@ var _ = Describe("Marshaller", func() {
 							CreatedDate: &v0,
 						}
 						expectedClause = "CreatedDate > LAST_N_DAYS:5"
+					})
+					It("returns appropriate where clause", func() {
+						clause, err = MarshalWhereClause(criteria)
+						Expect(clause).To(Equal(expectedClause))
+					})
+				})
+				Context("when there is only greaterOrEqualLastNDaysOperator operator", func() {
+					BeforeEach(func() {
+						v0 := 5
+						criteria = QueryCriteriaDateLastNDaysLiteralsOperatorsPtr{
+							DeliveredDate: &v0,
+						}
+						expectedClause = "DeliveredDate >= LAST_N_DAYS:5"
 					})
 					It("returns appropriate where clause", func() {
 						clause, err = MarshalWhereClause(criteria)
@@ -516,13 +572,17 @@ var _ = Describe("Marshaller", func() {
 					BeforeEach(func() {
 						v0 := 5
 						v1 := 10
-						v3 := 15
+						v2 := 15
+						v3 := 20
+						v4 := 25
 						criteria = QueryCriteriaDateLastNDaysLiteralsOperatorsPtr{
 							CreatedDate: &v0,
-							OtherDate:   &v3,
+							OtherDate:   &v2,
 							ClosedDate:  &v1,
+							ScheduledDate: &v3,
+							DeliveredDate: &v4,
 						}
-						expectedClause = "CreatedDate > LAST_N_DAYS:5 AND OtherDate = LAST_N_DAYS:15 AND ClosedDate < LAST_N_DAYS:10"
+						expectedClause = "CreatedDate > LAST_N_DAYS:5 AND OtherDate = LAST_N_DAYS:15 AND ClosedDate < LAST_N_DAYS:10 AND ScheduledDate <= LAST_N_DAYS:20 AND DeliveredDate >= LAST_N_DAYS:25"
 					})
 					It("returns appropriate where clause", func() {
 						clause, err = MarshalWhereClause(criteria)

@@ -16,57 +16,61 @@ import (
 )
 
 const (
-	openBrace                     = "("
-	closeBrace                    = ")"
-	orCondition                   = " OR "
-	andCondition                  = " AND "
-	singleQuote                   = "'"
-	safeSingleQuote               = "\\'"
-	doubleQuote                   = "\""
-	safeDoubleQuote               = "\\\""
-	backslash                     = "\\"
-	safeBackslash                 = "\\\\"
-	newLine                       = "\n"
-	safeNewLine                   = "\\n"
-	carriageReturn                = "\r"
-	safeCarriageReturn            = "\\r"
-	tab                           = "\t"
-	safeTab                       = "\\t"
-	bell                          = "\b"
-	safeBell                      = "\\b"
-	formFeed                      = "\f"
-	safeFormFeed                  = "\\f"
-	underscore                    = "_"
-	safeUnderscore                = "\\_"
-	percentSign                   = "%"
-	safePercentSign               = "\\%"
-	comma                         = ","
-	notOperator                   = "NOT "
-	openLike                      = " LIKE '%"
-	closeLike                     = "%'"
-	inOperator                    = " IN "
-	equalsOperator                = " = "
-	period                        = "."
-	null                          = "null"
-	notEqualsOperator             = " != "
-	greaterThanOperator           = " > "
-	greaterThanOrEqualsToOperator = " >= "
-	lessThanOperator              = " < "
-	lessThanOrEqualsToOperator    = " <= "
-	greaterNextNDaysOperator      = " > NEXT_N_DAYS:"
-	equalsNextNDaysOperator       = " = NEXT_N_DAYS:"
-	lessNextNDaysOperator         = " < NEXT_N_DAYS:"
-	greaterLastNDaysOperator      = " > LAST_N_DAYS:"
-	equalsLastNDaysOperator       = " = LAST_N_DAYS:"
-	lessLastNDaysOperator         = " < LAST_N_DAYS:"
-	selectKeyword                 = "SELECT "
-	whereKeyword                  = " WHERE "
-	fromKeyword                   = " FROM "
-	orderByKeyword                = " ORDER BY "
-	limitKeyword                  = " LIMIT "
-	offsetKeyword                 = " OFFSET "
-	ascKeyword                    = " ASC"
-	descKeyword                   = " DESC"
+	openBrace                       = "("
+	closeBrace                      = ")"
+	orCondition                     = " OR "
+	andCondition                    = " AND "
+	singleQuote                     = "'"
+	safeSingleQuote                 = "\\'"
+	doubleQuote                     = "\""
+	safeDoubleQuote                 = "\\\""
+	backslash                       = "\\"
+	safeBackslash                   = "\\\\"
+	newLine                         = "\n"
+	safeNewLine                     = "\\n"
+	carriageReturn                  = "\r"
+	safeCarriageReturn              = "\\r"
+	tab                             = "\t"
+	safeTab                         = "\\t"
+	bell                            = "\b"
+	safeBell                        = "\\b"
+	formFeed                        = "\f"
+	safeFormFeed                    = "\\f"
+	underscore                      = "_"
+	safeUnderscore                  = "\\_"
+	percentSign                     = "%"
+	safePercentSign                 = "\\%"
+	comma                           = ","
+	notOperator                     = "NOT "
+	openLike                        = " LIKE '%"
+	closeLike                       = "%'"
+	inOperator                      = " IN "
+	equalsOperator                  = " = "
+	period                          = "."
+	null                            = "null"
+	notEqualsOperator               = " != "
+	greaterThanOperator             = " > "
+	greaterThanOrEqualsToOperator   = " >= "
+	lessThanOperator                = " < "
+	lessThanOrEqualsToOperator      = " <= "
+	greaterNextNDaysOperator        = " > NEXT_N_DAYS:"
+	greaterOrEqualNextNDaysOperator = " >= NEXT_N_DAYS:"
+	equalsNextNDaysOperator         = " = NEXT_N_DAYS:"
+	lessNextNDaysOperator           = " < NEXT_N_DAYS:"
+	lessOrEqualNextNDaysOperator    = " <= NEXT_N_DAYS:"
+	greaterLastNDaysOperator        = " > LAST_N_DAYS:"
+	greaterOrEqualLastNDaysOperator = " >= LAST_N_DAYS:"
+	equalsLastNDaysOperator         = " = LAST_N_DAYS:"
+	lessLastNDaysOperator           = " < LAST_N_DAYS:"
+	lessOrEqualLastNDaysOperator    = " <= LAST_N_DAYS:"
+	selectKeyword                   = "SELECT "
+	whereKeyword                    = " WHERE "
+	fromKeyword                     = " FROM "
+	orderByKeyword                  = " ORDER BY "
+	limitKeyword                    = " LIMIT "
+	offsetKeyword                   = " OFFSET "
+	ascKeyword                      = " ASC"
+	descKeyword                     = " DESC"
 
 	// DateFormat is the golang reference time in the soql dateTime fields format
 	DateFormat = "2006-01-02T15:04:05.000-0700"
@@ -116,38 +120,50 @@ const (
 	LessThanOrEqualsToOperator = "lessThanOrEqualsToOperator"
 	//GreaterNextNDaysOperator is the tag to be used for "> NEXT_N_DAYS:n" operator in where clause
 	GreaterNextNDaysOperator = "greaterNextNDaysOperator"
+	//GreaterNextNDaysOperator is the tag to be used for ">= NEXT_N_DAYS:n" operator in where clause
+	GreaterOrEqualNextNDaysOperator = "greaterOrEqualNextNDaysOperator"
 	//EqualsNextNDaysOperator is the tag to be used for "= NEXT_N_DAYS:n" operator in where clause
 	EqualsNextNDaysOperator = "equalsNextNDaysOperator"
 	//LessNextNDaysOperator is the tag to be used for "< NEXT_N_DAYS:n" operator in where clause
 	LessNextNDaysOperator = "lessNextNDaysOperator"
+	//LessOrEqualNextNDaysOperator is the tag to be used for "<= NEXT_N_DAYS:n" operator in where clause
+	LessOrEqualNextNDaysOperator = "lessOrEqualNextNDaysOperator"
 	//GreaterLastNDaysOperator is the tag to be used for "> LAST_N_DAYS:n" operator in where clause
 	GreaterLastNDaysOperator = "greaterLastNDaysOperator"
+	//GreaterOrEqualLastNDaysOperator is the tag to be used for ">= LAST_N_DAYS:n" operator in where clause
+	GreaterOrEqualLastNDaysOperator = "greaterOrEqualLastNDaysOperator"
 	//EqualsLastNDaysOperator is the tag to be used for "= LAST_N_DAYS:n" operator in where clause
 	EqualsLastNDaysOperator = "equalsLastNDaysOperator"
 	//LessLastNDaysOperator is the tag to be used for "< LAST_N_DAYS:n" operator in where clause
 	LessLastNDaysOperator = "lessLastNDaysOperator"
+	//LessOrEqualLastNDaysOperator is the tag to be used for "<= LAST_N_DAYS:n" operator in where clause
+	LessOrEqualLastNDaysOperator = "lessOrEqualLastNDaysOperator"
 
 	// Subquery is the tag to be used for a subquery in a where clause
 	Subquery = "subquery"
 )
 
 var clauseBuilderMap = map[string]func(v interface{}, fieldName string) (string, error){
-	LikeOperator:                  buildLikeClause,
-	NotLikeOperator:               buildNotLikeClause,
-	InOperator:                    buildInClause,
-	EqualsOperator:                buildEqualsClause,
-	NullOperator:                  buildNullClause,
-	NotEqualsOperator:             buildNotEqualsClause,
-	GreaterThanOperator:           buildGreaterThanClause,
-	GreaterThanOrEqualsToOperator: buildGreaterThanOrEqualsToClause,
-	LessThanOperator:              buildLessThanClause,
-	LessThanOrEqualsToOperator:    buildLessThanOrEqualsToClause,
-	GreaterNextNDaysOperator:      buildGreaterNextNDaysOperator,
-	EqualsNextNDaysOperator:       buildEqualsNextNDaysOperator,
-	LessNextNDaysOperator:         buildLessNextNDaysOperator,
-	GreaterLastNDaysOperator:      buildGreaterLastNDaysOperator,
-	EqualsLastNDaysOperator:       buildEqualsLastNDaysOperator,
-	LessLastNDaysOperator:         buildLessLastNDaysOperator,
+	LikeOperator:                    buildLikeClause,
+	NotLikeOperator:                 buildNotLikeClause,
+	InOperator:                      buildInClause,
+	EqualsOperator:                  buildEqualsClause,
+	NullOperator:                    buildNullClause,
+	NotEqualsOperator:               buildNotEqualsClause,
+	GreaterThanOperator:             buildGreaterThanClause,
+	GreaterThanOrEqualsToOperator:   buildGreaterThanOrEqualsToClause,
+	LessThanOperator:                buildLessThanClause,
+	LessThanOrEqualsToOperator:      buildLessThanOrEqualsToClause,
+	GreaterNextNDaysOperator:        buildGreaterNextNDaysOperator,
+	GreaterOrEqualNextNDaysOperator: buildGreaterOrEqualNextNDaysOperator,
+	EqualsNextNDaysOperator:         buildEqualsNextNDaysOperator,
+	LessNextNDaysOperator:           buildLessNextNDaysOperator,
+	LessOrEqualNextNDaysOperator:    buildLessOrEqualNextNDaysOperator,
+	GreaterLastNDaysOperator:        buildGreaterLastNDaysOperator,
+	GreaterOrEqualLastNDaysOperator: buildGreaterOrEqualLastNDaysOperator,
+	EqualsLastNDaysOperator:         buildEqualsLastNDaysOperator,
+	LessLastNDaysOperator:           buildLessLastNDaysOperator,
+	LessOrEqualLastNDaysOperator:    buildLessOrEqualLastNDaysOperator,
 }
 
 var (
@@ -375,6 +391,10 @@ func buildGreaterNextNDaysOperator(v interface{}, fieldName string) (string, err
 	return constructDateLiteralsClause(v, fieldName, greaterNextNDaysOperator)
 }
 
+func buildGreaterOrEqualNextNDaysOperator(v interface{}, fieldName string) (string, error) {
+	return constructDateLiteralsClause(v, fieldName, greaterOrEqualNextNDaysOperator)
+}
+
 func buildEqualsNextNDaysOperator(v interface{}, fieldName string) (string, error) {
 	return constructDateLiteralsClause(v, fieldName, equalsNextNDaysOperator)
 }
@@ -383,8 +403,17 @@ func buildLessNextNDaysOperator(v interface{}, fieldName string) (string, error)
 	return constructDateLiteralsClause(v, fieldName, lessNextNDaysOperator)
 }
 
+func buildLessOrEqualNextNDaysOperator(v interface{}, fieldName string) (string, error) {
+	return constructComparisonClause(v, fieldName, lessOrEqualNextNDaysOperator)
+
+}
+
 func buildGreaterLastNDaysOperator(v interface{}, fieldName string) (string, error) {
 	return constructDateLiteralsClause(v, fieldName, greaterLastNDaysOperator)
+}
+
+func buildGreaterOrEqualLastNDaysOperator(v interface{}, fieldName string) (string, error) {
+	return constructDateLiteralsClause(v, fieldName, greaterOrEqualLastNDaysOperator)
 }
 
 func buildEqualsLastNDaysOperator(v interface{}, fieldName string) (string, error) {
@@ -393,6 +422,10 @@ func buildEqualsLastNDaysOperator(v interface{}, fieldName string) (string, erro
 
 func buildLessLastNDaysOperator(v interface{}, fieldName string) (string, error) {
 	return constructDateLiteralsClause(v, fieldName, lessLastNDaysOperator)
+}
+
+func buildLessOrEqualLastNDaysOperator(v interface{}, fieldName string) (string, error) {
+	return constructDateLiteralsClause(v, fieldName, lessOrEqualLastNDaysOperator)
 }
 
 func constructDateLiteralsClause(v interface{}, fieldName string, operator string) (string, error) {
