@@ -23,6 +23,7 @@ Start with using `soql` tags on members of your golang structs. `soql` is the ma
     likeOperator // is the tag to be used for "like" operator in where clause. It should be used on members of struct that have been tagged with whereClause.
     notLikeOperator // is the tag to be used for "not like" operator in where clause. It should be used on members of struct that have been tagged with whereClause.
     inOperator // is the tag to be used for "in" operator in where clause. It should be used on members of struct that have been tagged with whereClause.
+    notInOperator // is the tag to be used for "not in" operator in where clause. It should be used on members of struct that have been tagged with whereClause.
     equalsOperator // is the tag to be used for "=" operator in where clause. It should be used on members of struct that have been tagged with whereClause.
     notEqualsOperator // is the tag to be used for "!=" operator in where clause. It should be used on members of struct that have been tagged with whereClause.
     nullOperator // is the tag to be used for " = null " or "!= null" operator in where clause. It should be used on members of struct that have been tagged with whereClause.
@@ -391,6 +392,15 @@ type sub struct {
    })
    // whereClause will be: WHERE Role__r.Name IN ('admin','user')
    ```
+   
+1. `notInOperator`: This tag is used on members which should be considered to construct field expressions in where clause using `NOT IN` comparison operator. This tag should be used on member of type `[]string`, `[]int`, `[]int8`, `[]int16`, `[]int32`, `[]int64`, `[]uint`, `[]uint8`, `[]uint16`, `[]uint32`, `[]uint64`, `[]float32`, `[]float64`, `[]bool` or `[]time.Time`. Used on any other type, `ErrInvalidTag` error will be returned. Example will clarify this more:
+
+   ```
+   whereClause, _ := MarshalWhereClause(QueryCriteria{
+       ExcludeIDs: []string{"123", "456"},
+   })
+   // whereClause will be: WHERE Id NOT IN ('123','456')
+   ```
 
 1. `equalsOperator`: This tag is used on members which should be considered to construct field expressions in where clause using `=` comparison operator. This tag should be used on member of type `string`, `int`, `int8`, `int16`, `int32`, `int64`, `uint`, `uint8`, `uint16`, `uint32`, `uint64`, `float32`, `float64`, `bool`, `*int`, `*int8`, `*int16`, `*int32`, `*int64`, `*uint`, `*uint8`, `*uint16`, `*uint32`, `*uint64`, `*float32`, `*float64`, `*bool` or `time.Time`. Used on any other type, `ErrInvalidTag` error will be returned. Example will clarify this more:
 
@@ -578,7 +588,7 @@ type sub struct {
    whereClause, _ := MarshalWhereClause(QueryCriteria{
        CreatedDate: 5,
    })
-   // whereClause will be: WHERE CreatedDate <= LAST_N_DAYS:5
+   // whereClause will be: WHERE CreatedDate <=L: LAST_N_DAYS:5
    ```
     Fields that are pointers will only be included if they are initialized else they will be skipped from WHERE clause.
 

@@ -45,6 +45,7 @@ const (
 	openLike                        = " LIKE '%"
 	closeLike                       = "%'"
 	inOperator                      = " IN "
+	notInOperator                   = " NOT IN "
 	equalsOperator                  = " = "
 	period                          = "."
 	null                            = "null"
@@ -104,6 +105,8 @@ const (
 	NotLikeOperator = "notLikeOperator"
 	// InOperator is the tag to be used for "in" operator in where clause
 	InOperator = "inOperator"
+	// NotInOperator is the tag to be used for "not in" operator in where clause
+	NotInOperator = "notInOperator"
 	// EqualsOperator is the tag to be used for "=" operator in where clause
 	EqualsOperator = "equalsOperator"
 	// NotEqualsOperator is the tag to be used for "!=" operator in where clause
@@ -147,6 +150,7 @@ var clauseBuilderMap = map[string]func(v interface{}, fieldName string) (string,
 	LikeOperator:                    buildLikeClause,
 	NotLikeOperator:                 buildNotLikeClause,
 	InOperator:                      buildInClause,
+	NotInOperator:                   buildNotInClause,
 	EqualsOperator:                  buildEqualsClause,
 	NullOperator:                    buildNullClause,
 	NotEqualsOperator:               buildNotEqualsClause,
@@ -283,6 +287,14 @@ func constructLikeClause(v interface{}, fieldName string, exclude bool) (string,
 }
 
 func buildInClause(v interface{}, fieldName string) (string, error) {
+	return constructContainsClause(v, fieldName, inOperator)
+}
+
+func buildNotInClause(v interface{}, fieldName string) (string, error) {
+	return constructContainsClause(v, fieldName, notInOperator)
+}
+
+func constructContainsClause(v interface{}, fieldName string, operator string) (string, error) {
 	var buff strings.Builder
 	var items []string
 	useSingleQuotes := false
@@ -303,7 +315,7 @@ func buildInClause(v interface{}, fieldName string) (string, error) {
 
 	if len(items) > 0 {
 		buff.WriteString(fieldName)
-		buff.WriteString(inOperator)
+		buff.WriteString(operator)
 		buff.WriteString(openBrace)
 	}
 	for indx, item := range items {

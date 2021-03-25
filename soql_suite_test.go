@@ -38,6 +38,7 @@ type TestQueryCriteria struct {
 	AssetType                   string   `soql:"equalsOperator,fieldName=Tech_Asset__r.Asset_Type_Asset_Type__c"`
 	Status                      string   `soql:"notEqualsOperator,fieldName=Status__c"`
 	AllowNullLastDiscoveredDate *bool    `soql:"nullOperator,fieldName=Last_Discovered_Date__c"`
+	ExcludeIDs                  []string `soql:"notInOperator,fieldName=id"`
 }
 
 type NonSoqlStruct struct {
