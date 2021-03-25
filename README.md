@@ -588,7 +588,7 @@ type sub struct {
    whereClause, _ := MarshalWhereClause(QueryCriteria{
        CreatedDate: 5,
    })
-   // whereClause will be: WHERE CreatedDate <=L: LAST_N_DAYS:5
+   // whereClause will be: WHERE CreatedDate <= LAST_N_DAYS:5
    ```
     Fields that are pointers will only be included if they are initialized else they will be skipped from WHERE clause.
 
