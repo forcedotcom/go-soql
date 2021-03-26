@@ -225,6 +225,44 @@ var _ = Describe("Marshaller", func() {
 				})
 			})
 
+			Context("when only notInClause is populated", func() {
+				Context("when there is only one item in the inClause array", func() {
+					BeforeEach(func() {
+						critetria = TestQueryCriteria{
+							ExcludeIDs: []string{"123"},
+						}
+						expectedClause = "id NOT IN ('123')"
+					})
+					It("returns where clause with only one item in NOT IN clause", func() {
+						Expect(clause).To(Equal(expectedClause))
+					})
+				})
+
+				Context("when there is more than one item in the notInClause array", func() {
+					BeforeEach(func() {
+						critetria = TestQueryCriteria{
+							ExcludeIDs: []string{"123", "456"},
+						}
+						expectedClause = "id NOT IN ('123','456')"
+					})
+					It("returns where clause with all the items in NOT IN clause", func() {
+						Expect(clause).To(Equal(expectedClause))
+					})
+				})
+
+				Context("when value has single quote", func() {
+					BeforeEach(func() {
+						critetria = TestQueryCriteria{
+							ExcludeIDs: []string{"123", "4'56"},
+						}
+						expectedClause = "id NOT IN ('123','4\\'56')"
+					})
+					It("returns appropriate where clause by escaping single quote", func() {
+						Expect(clause).To(Equal(expectedClause))
+					})
+				})
+			})
+
 			Context("when only null clause is populated", func() {
 				Context("when null is allowed", func() {
 					BeforeEach(func() {
@@ -311,9 +349,10 @@ var _ = Describe("Marshaller", func() {
 						Roles:                       []string{"db", "dbmgmt"},
 						ExcludeNamePattern:          []string{"-core", "-drp"},
 						AllowNullLastDiscoveredDate: &allowNull,
+						ExcludeIDs:                  []string{"123","456"},
 					}
 
-					expectedClause = "(Host_Name__c LIKE '%-db%' OR Host_Name__c LIKE '%-dbmgmt%') AND Role__r.Name IN ('db','dbmgmt') AND ((NOT Host_Name__c LIKE '%-core%') AND (NOT Host_Name__c LIKE '%-drp%')) AND Tech_Asset__r.Asset_Type_Asset_Type__c = 'SERVER' AND Last_Discovered_Date__c != null"
+					expectedClause = "(Host_Name__c LIKE '%-db%' OR Host_Name__c LIKE '%-dbmgmt%') AND Role__r.Name IN ('db','dbmgmt') AND ((NOT Host_Name__c LIKE '%-core%') AND (NOT Host_Name__c LIKE '%-drp%')) AND Tech_Asset__r.Asset_Type_Asset_Type__c = 'SERVER' AND Last_Discovered_Date__c != null AND id NOT IN ('123','456')"
 				})
 
 				It("returns properly formed clause joined by AND clause", func() {
