@@ -745,6 +745,24 @@ var _ = Describe("Marshaller", func() {
 			})
 		})
 
+		Context("when some clauses have soql tags and don't", func() {
+			var criteria QueryCriteriaWithNoSoqlTag
+			BeforeEach(func() {
+				criteria = QueryCriteriaWithNoSoqlTag{
+					NUMAEnabled:   true,
+					DisableAlerts: false,
+				}
+
+				expectedClause = "NUMA_Enabled__c = true"
+			})
+
+			It("returns properly formed clause without error§q", func() {
+				clause, err = MarshalWhereClause(criteria)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(clause).To(Equal(expectedClause))
+			})
+		})
+
 		Context("when all clauses are date time data types", func() {
 			var criteria QueryCriteriaWithDateTimeType
 			var currentTime time.Time
