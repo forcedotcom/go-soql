@@ -197,6 +197,11 @@ type QueryCriteriaWithBooleanType struct {
 	DisableAlerts bool `soql:"equalsOperator,fieldName=Disable_Alerts__c"`
 }
 
+type QueryCriteriaWithNoSoqlTag struct {
+	NUMAEnabled   bool `soql:"equalsOperator,fieldName=NUMA_Enabled__c"`
+	DisableAlerts bool `json:"random_value"`
+}
+
 type QueryCriteriaWithBooleanPtrType struct {
 	NUMAEnabled   *bool `soql:"equalsOperator,fieldName=NUMA_Enabled__c"`
 	DisableAlerts *bool `soql:"equalsOperator,fieldName=Disable_Alerts__c"`

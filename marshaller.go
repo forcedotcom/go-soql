@@ -121,25 +121,25 @@ const (
 	LessThanOperator = "lessThanOperator"
 	// LessThanOrEqualsToOperator is the tag to be used for "<=" operator in where clause
 	LessThanOrEqualsToOperator = "lessThanOrEqualsToOperator"
-	//GreaterNextNDaysOperator is the tag to be used for "> NEXT_N_DAYS:n" operator in where clause
+	// GreaterNextNDaysOperator is the tag to be used for "> NEXT_N_DAYS:n" operator in where clause
 	GreaterNextNDaysOperator = "greaterNextNDaysOperator"
-	//GreaterNextNDaysOperator is the tag to be used for ">= NEXT_N_DAYS:n" operator in where clause
+	// GreaterOrEqualNextNDaysOperator is the tag to be used for ">= NEXT_N_DAYS:n" operator in where clause
 	GreaterOrEqualNextNDaysOperator = "greaterOrEqualNextNDaysOperator"
-	//EqualsNextNDaysOperator is the tag to be used for "= NEXT_N_DAYS:n" operator in where clause
+	// EqualsNextNDaysOperator is the tag to be used for "= NEXT_N_DAYS:n" operator in where clause
 	EqualsNextNDaysOperator = "equalsNextNDaysOperator"
-	//LessNextNDaysOperator is the tag to be used for "< NEXT_N_DAYS:n" operator in where clause
+	// LessNextNDaysOperator is the tag to be used for "< NEXT_N_DAYS:n" operator in where clause
 	LessNextNDaysOperator = "lessNextNDaysOperator"
-	//LessOrEqualNextNDaysOperator is the tag to be used for "<= NEXT_N_DAYS:n" operator in where clause
+	// LessOrEqualNextNDaysOperator is the tag to be used for "<= NEXT_N_DAYS:n" operator in where clause
 	LessOrEqualNextNDaysOperator = "lessOrEqualNextNDaysOperator"
-	//GreaterLastNDaysOperator is the tag to be used for "> LAST_N_DAYS:n" operator in where clause
+	// GreaterLastNDaysOperator is the tag to be used for "> LAST_N_DAYS:n" operator in where clause
 	GreaterLastNDaysOperator = "greaterLastNDaysOperator"
-	//GreaterOrEqualLastNDaysOperator is the tag to be used for ">= LAST_N_DAYS:n" operator in where clause
+	// GreaterOrEqualLastNDaysOperator is the tag to be used for ">= LAST_N_DAYS:n" operator in where clause
 	GreaterOrEqualLastNDaysOperator = "greaterOrEqualLastNDaysOperator"
-	//EqualsLastNDaysOperator is the tag to be used for "= LAST_N_DAYS:n" operator in where clause
+	// EqualsLastNDaysOperator is the tag to be used for "= LAST_N_DAYS:n" operator in where clause
 	EqualsLastNDaysOperator = "equalsLastNDaysOperator"
-	//LessLastNDaysOperator is the tag to be used for "< LAST_N_DAYS:n" operator in where clause
+	// LessLastNDaysOperator is the tag to be used for "< LAST_N_DAYS:n" operator in where clause
 	LessLastNDaysOperator = "lessLastNDaysOperator"
-	//LessOrEqualLastNDaysOperator is the tag to be used for "<= LAST_N_DAYS:n" operator in where clause
+	// LessOrEqualLastNDaysOperator is the tag to be used for "<= LAST_N_DAYS:n" operator in where clause
 	LessOrEqualLastNDaysOperator = "lessOrEqualLastNDaysOperator"
 
 	// Subquery is the tag to be used for a subquery in a where clause
@@ -685,6 +685,9 @@ func marshalWhereClause(v interface{}, tableName, joiner string) (string, error)
 		field := reflectedValue.Field(i)
 		fieldType := reflectedType.Field(i)
 		clauseTag := fieldType.Tag.Get(SoqlTag)
+		if clauseTag == "" {
+			continue
+		}
 		clauseKey := getClauseKey(clauseTag)
 		var partialClause string
 		if clauseKey == Subquery {
