@@ -1958,5 +1958,65 @@ var _ = Describe("Marshaller", func() {
 				Expect(actualQuery).To(Equal(expectedQuery))
 			})
 		})
+		Context("when a struct with where clause with subquery and joiner=not in passed", func() {
+			BeforeEach(func() {
+				soqlStruct = soqlSubQueryInTestStruct{
+					WhereClause: inSubqueryCriteria{
+						Type: "Client",
+						NotInFraudTable: &soqlFraudStruct{
+							WhereClause: fraudCriteria{
+								IsFraud: true,
+							},
+						},
+						Country: "US",
+					},
+				}
+				expectedQuery = "SELECT Name,Email,Phone FROM Contact WHERE Type = 'Client' AND Name NOT IN (SELECT Name,Email,Phone FROM Fraud WHERE isFraud = true) AND Country = 'US'"
+			})
+
+			It("returns properly constructed soql query", func() {
+				Expect(err).ToNot(HaveOccurred())
+				Expect(actualQuery).To(Equal(expectedQuery))
+			})
+		})
+		Context("when a struct with where clause with subquery and joiner=in passed", func() {
+			BeforeEach(func() {
+				soqlStruct = soqlSubQueryInTestStruct{
+					WhereClause: inSubqueryCriteria{
+						Type: "Client",
+						InFraudTable: &soqlFraudStruct{
+							WhereClause: fraudCriteria{
+								IsFraud: true,
+							},
+						},
+						Country: "US",
+					},
+				}
+				expectedQuery = "SELECT Name,Email,Phone FROM Contact WHERE Type = 'Client' AND Name IN (SELECT Name,Email,Phone FROM Fraud WHERE isFraud = true) AND Country = 'US'"
+			})
+
+			It("returns properly constructed soql query", func() {
+				Expect(err).ToNot(HaveOccurred())
+				Expect(actualQuery).To(Equal(expectedQuery))
+			})
+		})
+		Context("when a struct with where clause with subquery and joiner=in and without fieldName passed", func() {
+			BeforeEach(func() {
+				soqlStruct = soqlSubQueryInTestStruct{
+					WhereClause: inSubqueryCriteria{
+						Type: "Client",
+						InFraudTableWithoutFieldName: &soqlFraudStruct{
+							WhereClause: fraudCriteria{
+								IsFraud: true,
+							},
+						},
+					},
+				}
+			})
+
+			It("returns ErrInvalidTag", func() {
+				Expect(err).To(Equal(ErrInvalidTag))
+			})
+		})
 	})
 })

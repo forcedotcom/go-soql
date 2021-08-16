@@ -206,8 +206,9 @@ type soqlQuery struct {
 }
 
 type queryCriteria struct {
-	Position    positionCriteria    `soql:"subquery,joiner=OR"`
-	Contactable contactableCriteria `soql:"subquery,joiner=OR"`
+	Position          positionCriteria          `soql:"subquery,joiner=OR"`
+	Contactable       contactableCriteria       `soql:"subquery,joiner=OR"`
+	AlreadyContacted  alreadyContactedSoqlQuery `soql:"subquery,joiner=NOT IN,fieldName=Name"`
 }
 
 type positionCriteria struct {
@@ -234,6 +235,20 @@ type phoneCheck struct {
 	Phone     bool `soql:"nullOperator,fieldName=Phone"`
 	DoNotCall bool `soql:"equalsOperator,fieldName=DoNotCall"`
 }
+
+type alreadyContactedSoqlQuery struct {
+   SelectClause alreadyContacted         `soql:"selectClause,tableName=Calls"`
+   WhereClause  alreadyContactedCriteria `soql:"whereClause"`
+}
+
+type alreadyContacted struct {
+   Name string `soql:"selectColumn,fieldName=Name"`
+}
+
+type alreadyContactedCriteria struct {
+   IsContacted bool `soql:"equalsOperator,fieldName=IsContacted"`
+}
+
 soqlStruct := soqlQuery{
     WhereClause: queryCriteria{
         Position: positionCriteria{
@@ -253,6 +268,11 @@ soqlStruct := soqlQuery{
                 DoNotCall: false,
             },
         },
+        AlreadyContacted: alreadyContactedSoqlQuery{
+            WhereClause: alreadyContactedCriteria{
+               IsContacted: true,
+            }
+        }
     },
 }
 query, err := soql.Marshal(soqlStruct)
@@ -268,7 +288,7 @@ The above code will generate this SOQL query:
 ``` sql
 SELECT Name,Email,Phone
 FROM Contact
-WHERE (Title = 'Purchasing Manager' OR (Department = 'Accounting' AND Title LIKE '%Manager%')) AND ((Email != null AND HasOptedOutOfEmail = false) OR (Phone != null AND DoNotCall = false))
+WHERE (Title = 'Purchasing Manager' OR (Department = 'Accounting' AND Title LIKE '%Manager%')) AND ((Email != null AND HasOptedOutOfEmail = false) OR (Phone != null AND DoNotCall = false)) AND Name NOT IN (SELECT Name FROM Calls WHERE IsContacted = true)
 ```
 
 #### Advantages

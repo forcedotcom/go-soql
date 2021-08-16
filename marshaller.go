@@ -703,12 +703,30 @@ func marshalWhereClause(v interface{}, tableName, joiner string) (string, error)
 			if err != nil {
 				return "", err
 			}
-			partialClause, err = marshalWhereClause(field.Interface(), tableName, joiner)
-			if err != nil {
-				return "", err
-			}
+			if joiner == inOperator || joiner == notInOperator {
+				fieldName := getFieldName(clauseTag, "")
+				if fieldName == "" {
+					return "", ErrInvalidTag
+				}
+				partialJoinQuery, err := Marshal(field.Interface())
+				if err != nil {
+					return "", err
+				}
 
-			partialClause = openBrace + partialClause + closeBrace
+				var queryBuff strings.Builder
+				queryBuff.WriteString(fieldName)
+				queryBuff.WriteString(joiner)
+				queryBuff.WriteString(openBrace)
+				queryBuff.WriteString(partialJoinQuery)
+				queryBuff.WriteString(closeBrace)
+				partialClause = queryBuff.String()
+			} else {
+				partialClause, err = marshalWhereClause(field.Interface(), tableName, joiner)
+				if err != nil {
+					return "", err
+				}
+				partialClause = openBrace + partialClause + closeBrace
+			}
 		} else {
 			fieldName := getFieldName(clauseTag, fieldType.Name)
 			if fieldName == "" {
@@ -791,6 +809,10 @@ func getJoiner(clauseTag string) (string, error) {
 	switch strings.ToLower(tag) {
 	case "or":
 		return orCondition, nil
+	case "in":
+		return inOperator, nil
+	case "not in":
+		return notInOperator, nil
 	case "and", "":
 		return andCondition, nil
 	default:
