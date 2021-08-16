@@ -438,3 +438,26 @@ type ptrSubqueryCriteria struct {
 	Position    *positionCriteria    `soql:"subquery,joiner=OR"`
 	Contactable *contactableCriteria `soql:"subquery,joiner=OR"`
 }
+
+type soqlSubQueryInTestStruct struct {
+	SelectClause contact            `soql:"selectClause,tableName=Contact"`
+	WhereClause  inSubqueryCriteria `soql:"whereClause"`
+}
+
+type inSubqueryCriteria struct {
+	Type                         string           `soql:"equalsOperator,fieldName=Type"`
+	NotInFraudTable              *soqlFraudStruct `soql:"subquery,joiner=NOT IN,fieldName=Name"`
+	InFraudTable                 *soqlFraudStruct `soql:"subquery,joiner=IN,fieldName=Name"`
+	InFraudTableWithoutFieldName *soqlFraudStruct `soql:"subquery,joiner=IN"`
+	Country                      string           `soql:"equalsOperator,fieldName=Country"`
+}
+
+type fraudCriteria struct {
+	IsFraud bool `soql:"equalsOperator,fieldName=isFraud"`
+}
+
+type soqlFraudStruct struct {
+	SelectClause contact       `soql:"selectClause,tableName=Fraud"`
+	WhereClause  fraudCriteria `soql:"whereClause"`
+}
+
