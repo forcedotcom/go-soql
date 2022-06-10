@@ -255,7 +255,7 @@ type QueryCriteriaWithMixedDataTypesAndOperators struct {
 	NUMAEnabled                      bool      `soql:"equalsOperator,fieldName=NUMA_Enabled__c"`
 	PvtTestFailCount                 int64     `soql:"lessThanOrEqualsToOperator,fieldName=Pvt_Test_Fail_Count__c"`
 	PhysicalCPUCount                 uint8     `soql:"greaterThanOrEqualsToOperator,fieldName=Physical_CPU_Count__c"`
-	CreatedDate                      time.Time `soql:"equalsOperator,fieldName=CreatedDate"`
+	CreatedDate                      Date      `soql:"equalsOperator,fieldName=CreatedDate"`
 	DisableAlerts                    bool      `soql:"equalsOperator,fieldName=Disable_Alerts__c"`
 	AllocationLatency                float64   `soql:"lessThanOperator,fieldName=Allocation_Latency__c"`
 	MajorOSVersion                   string    `soql:"equalsOperator,fieldName=Major_OS_Version__c"`
@@ -460,4 +460,3 @@ type soqlFraudStruct struct {
 	SelectClause contact       `soql:"selectClause,tableName=Fraud"`
 	WhereClause  fraudCriteria `soql:"whereClause"`
 }
-

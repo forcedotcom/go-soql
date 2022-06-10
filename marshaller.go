@@ -73,8 +73,11 @@ const (
 	ascKeyword                      = " ASC"
 	descKeyword                     = " DESC"
 
-	// DateFormat is the golang reference time in the soql dateTime fields format
-	DateFormat = "2006-01-02T15:04:05.000-0700"
+	// DateTimeFormat is the golang reference time in the soql dateTime fields format
+	DateTimeFormat = "2006-01-02T15:04:05.000-0700"
+
+	// DateFormat is the golang reference time in the soql date fields format
+	DateFormat = "2006-01-02"
 
 	// SoqlTag is the main tag name to be used to mark a struct field to be considered for soql marshaling
 	SoqlTag = "soql"
@@ -243,6 +246,8 @@ var sanitizeLikeCharacters = append(
 
 var sanitizeLikeReplacer = strings.NewReplacer(sanitizeLikeCharacters...)
 
+type Date time.Time
+
 func buildLikeClause(v interface{}, fieldName string) (string, error) {
 	return constructLikeClause(v, fieldName, false)
 }
@@ -307,7 +312,11 @@ func constructContainsClause(v interface{}, fieldName string, operator string) (
 		items = strings.Fields(strings.Trim(fmt.Sprint(u), "[]"))
 	case []time.Time:
 		for _, item := range u {
-			items = append(items, item.Format(DateFormat))
+			items = append(items, item.Format(DateTimeFormat))
+		}
+	case []Date:
+		for _, item := range u {
+			items = append(items, time.Time(item).Format(DateFormat))
 		}
 	default:
 		return buff.String(), ErrInvalidTag
@@ -372,12 +381,18 @@ func constructComparisonClause(v interface{}, fieldName, operator string) (strin
 	case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64, float32, float64, bool:
 		value = fmt.Sprint(u)
 	case time.Time:
-		value = u.Format(DateFormat)
+		value = u.Format(DateTimeFormat)
+	case Date:
+		value = time.Time(u).Format(DateFormat)
 	case *int, *int8, *int16, *int32, *int64, *uint, *uint8, *uint16, *uint32, *uint64, *float32, *float64, *bool:
 		if !reflect.ValueOf(u).IsNil() {
 			value = fmt.Sprint(reflect.Indirect(reflect.ValueOf(u)))
 		}
 	case *time.Time:
+		if !reflect.ValueOf(u).IsNil() {
+			value = reflect.Indirect(reflect.ValueOf(u)).Interface().(time.Time).Format(DateTimeFormat)
+		}
+	case *Date:
 		if !reflect.ValueOf(u).IsNil() {
 			value = reflect.Indirect(reflect.ValueOf(u)).Interface().(time.Time).Format(DateFormat)
 		}
