@@ -814,7 +814,7 @@ var _ = Describe("Marshaller", func() {
 					NUMAEnabled:                      true,
 					PvtTestFailCount:                 256,
 					PhysicalCPUCount:                 4,
-					CreatedDate:                      Date(currentTime),
+					CreatedDate:                      currentTime,
 					DisableAlerts:                    false,
 					AllocationLatency:                10.5,
 					MajorOSVersion:                   "20",
@@ -824,7 +824,7 @@ var _ = Describe("Marshaller", func() {
 					NumHardDrives:                    &numHardDrives,
 				}
 
-				expectedClause = "BIOS_Type__c = '98.7.654a' AND Num_of_CPU_Cores__c > 32 AND NUMA_Enabled__c = true AND Pvt_Test_Fail_Count__c <= 256 AND Physical_CPU_Count__c >= 4 AND CreatedDate = " + currentTime.Format(DateFormat) + " AND Disable_Alerts__c = false AND Allocation_Latency__c < 10.5 AND Major_OS_Version__c = '20' AND Number_Of_Successive_Puppet_Run_Failures__c = 0 AND Last_Restart__c > " + currentTime.Format(DateTimeFormat) + " AND NumHardDrives__c = 2 AND ClosedDate > NEXT_N_DAYS:5"
+				expectedClause = "BIOS_Type__c = '98.7.654a' AND Num_of_CPU_Cores__c > 32 AND NUMA_Enabled__c = true AND Pvt_Test_Fail_Count__c <= 256 AND Physical_CPU_Count__c >= 4 AND CreatedDate = " + currentTime.Format(TestDateFormat) + " AND Disable_Alerts__c = false AND Allocation_Latency__c < 10.5 AND Major_OS_Version__c = '20' AND Number_Of_Successive_Puppet_Run_Failures__c = 0 AND Last_Restart__c > " + currentTime.Format(DateTimeFormat) + " AND NumHardDrives__c = 2 AND ClosedDate > NEXT_N_DAYS:5"
 			})
 
 			It("returns properly formed clause", func() {
@@ -1282,7 +1282,7 @@ var _ = Describe("Marshaller", func() {
 						NUMAEnabled:                      true,
 						PvtTestFailCount:                 256,
 						PhysicalCPUCount:                 4,
-						CreatedDate:                      Date(currentTime),
+						CreatedDate:                      currentTime,
 						DisableAlerts:                    false,
 						AllocationLatency:                10.5,
 						MajorOSVersion:                   "20",
@@ -1291,7 +1291,7 @@ var _ = Describe("Marshaller", func() {
 						LastRestart:                      currentTime,
 					},
 				}
-				expectedQuery = "SELECT Id,Name__c,NonNestedStruct__r.Name,NonNestedStruct__r.SomeValue__c FROM SM_Logical_Host__c WHERE BIOS_Type__c = '98.7.654a' AND Num_of_CPU_Cores__c > 32 AND NUMA_Enabled__c = true AND Pvt_Test_Fail_Count__c <= 256 AND Physical_CPU_Count__c >= 4 AND CreatedDate = " + currentTime.Format(DateFormat) + " AND Disable_Alerts__c = false AND Allocation_Latency__c < 10.5 AND Major_OS_Version__c = '20' AND Number_Of_Successive_Puppet_Run_Failures__c = 0 AND Last_Restart__c > " + currentTime.Format(DateTimeFormat) + " AND ClosedDate > NEXT_N_DAYS:5"
+				expectedQuery = "SELECT Id,Name__c,NonNestedStruct__r.Name,NonNestedStruct__r.SomeValue__c FROM SM_Logical_Host__c WHERE BIOS_Type__c = '98.7.654a' AND Num_of_CPU_Cores__c > 32 AND NUMA_Enabled__c = true AND Pvt_Test_Fail_Count__c <= 256 AND Physical_CPU_Count__c >= 4 AND CreatedDate = " + currentTime.Format(TestDateFormat) + " AND Disable_Alerts__c = false AND Allocation_Latency__c < 10.5 AND Major_OS_Version__c = '20' AND Number_Of_Successive_Puppet_Run_Failures__c = 0 AND Last_Restart__c > " + currentTime.Format(DateTimeFormat) + " AND ClosedDate > NEXT_N_DAYS:5"
 			})
 
 			It("returns properly constructed soql query", func() {
