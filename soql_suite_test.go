@@ -252,20 +252,21 @@ type QueryCriteriaDateLastNDaysLiteralsOperatorsPtr struct {
 var TestDateFormat = "2006-01-02"
 
 type QueryCriteriaWithMixedDataTypesAndOperators struct {
-	BIOSType                         string    `soql:"equalsOperator,fieldName=BIOS_Type__c"`
-	NumOfCPUCores                    int       `soql:"greaterThanOperator,fieldName=Num_of_CPU_Cores__c"`
-	NUMAEnabled                      bool      `soql:"equalsOperator,fieldName=NUMA_Enabled__c"`
-	PvtTestFailCount                 int64     `soql:"lessThanOrEqualsToOperator,fieldName=Pvt_Test_Fail_Count__c"`
-	PhysicalCPUCount                 uint8     `soql:"greaterThanOrEqualsToOperator,fieldName=Physical_CPU_Count__c"`
-	CreatedDate                      time.Time `soql:"equalsOperator,fieldName=CreatedDate,format=2006-01-02"`
-	DisableAlerts                    bool      `soql:"equalsOperator,fieldName=Disable_Alerts__c"`
-	AllocationLatency                float64   `soql:"lessThanOperator,fieldName=Allocation_Latency__c"`
-	MajorOSVersion                   string    `soql:"equalsOperator,fieldName=Major_OS_Version__c"`
-	NumOfSuccessivePuppetRunFailures uint32    `soql:"equalsOperator,fieldName=Number_Of_Successive_Puppet_Run_Failures__c"`
-	LastRestart                      time.Time `soql:"greaterThanOperator,fieldName=Last_Restart__c"`
-	Memory                           *float64  `soql:"equalsOperator,fieldName=Memory__c"`
-	NumHardDrives                    *int      `soql:"equalsOperator,fieldName=NumHardDrives__c"`
-	ClosedDate                       int       `soql:"greaterNextNDaysOperator,fieldName=ClosedDate"`
+	BIOSType                         string     `soql:"equalsOperator,fieldName=BIOS_Type__c"`
+	NumOfCPUCores                    int        `soql:"greaterThanOperator,fieldName=Num_of_CPU_Cores__c"`
+	NUMAEnabled                      bool       `soql:"equalsOperator,fieldName=NUMA_Enabled__c"`
+	PvtTestFailCount                 int64      `soql:"lessThanOrEqualsToOperator,fieldName=Pvt_Test_Fail_Count__c"`
+	PhysicalCPUCount                 uint8      `soql:"greaterThanOrEqualsToOperator,fieldName=Physical_CPU_Count__c"`
+	CreatedDate                      time.Time  `soql:"equalsOperator,fieldName=CreatedDate,format=2006-01-02"`
+	UpdatedDate                      *time.Time `soql:"equalsOperator,fieldName=UpdatedDate,format=2006-01-02"`
+	DisableAlerts                    bool       `soql:"equalsOperator,fieldName=Disable_Alerts__c"`
+	AllocationLatency                float64    `soql:"lessThanOperator,fieldName=Allocation_Latency__c"`
+	MajorOSVersion                   string     `soql:"equalsOperator,fieldName=Major_OS_Version__c"`
+	NumOfSuccessivePuppetRunFailures uint32     `soql:"equalsOperator,fieldName=Number_Of_Successive_Puppet_Run_Failures__c"`
+	LastRestart                      time.Time  `soql:"greaterThanOperator,fieldName=Last_Restart__c"`
+	Memory                           *float64   `soql:"equalsOperator,fieldName=Memory__c"`
+	NumHardDrives                    *int       `soql:"equalsOperator,fieldName=NumHardDrives__c"`
+	ClosedDate                       int        `soql:"greaterNextNDaysOperator,fieldName=ClosedDate"`
 }
 
 type InvalidSelectClause struct {
