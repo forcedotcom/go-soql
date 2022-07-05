@@ -366,17 +366,18 @@ This section explains the list of tags that can be used on members tagged with `
 
 ```
 type QueryCriteria struct {
-	IncludeNamePattern []string `soql:"likeOperator,fieldName=Name__c"`
-	ExcludeNamePattern []string `soql:"notLikeOperator,fieldName=Name__c"`
-	Roles              []string `soql:"inOperator,fieldName=Role__r.Name"`
-	SomeType           string   `soql:"equalsOperator,fieldName=Some_Type__c"`
-	SomeBoolType       *bool    `soql:"equalsOperator,fieldName=Some_Bool_Type__c"`
-	Status             string   `soql:"notEqualsOperator,fieldName=Status__c"`
-	AllowNullValue     *bool    `soql:"nullOperator,fieldName=Value__c"`
-	NumOfCPUCores      int      `soql:"greaterThanOperator,fieldName=Num_of_CPU_Cores__c"`
-	PhysicalCPUCount   uint8    `soql:"greaterThanOrEqualsToOperator,fieldName=Physical_CPU_Count__c"`
-	AllocationLatency  float64  `soql:"lessThanOperator,fieldName=Allocation_Latency__c"`
-	PvtTestFailCount   int64    `soql:"lessThanOrEqualsToOperator,fieldName=Pvt_Test_Fail_Count__c"`
+	IncludeNamePattern []string  `soql:"likeOperator,fieldName=Name__c"`
+	ExcludeNamePattern []string  `soql:"notLikeOperator,fieldName=Name__c"`
+	Roles              []string  `soql:"inOperator,fieldName=Role__r.Name"`
+	SomeType           string    `soql:"equalsOperator,fieldName=Some_Type__c"`
+	SomeBoolType       *bool     `soql:"equalsOperator,fieldName=Some_Bool_Type__c"`
+	Status             string    `soql:"notEqualsOperator,fieldName=Status__c"`
+	AllowNullValue     *bool     `soql:"nullOperator,fieldName=Value__c"`
+	NumOfCPUCores      int       `soql:"greaterThanOperator,fieldName=Num_of_CPU_Cores__c"`
+	PhysicalCPUCount   uint8     `soql:"greaterThanOrEqualsToOperator,fieldName=Physical_CPU_Count__c"`
+	AllocationLatency  float64   `soql:"lessThanOperator,fieldName=Allocation_Latency__c"`
+	PvtTestFailCount   int64     `soql:"lessThanOrEqualsToOperator,fieldName=Pvt_Test_Fail_Count__c"`
+    UpdateDate         time.Time `soql:"equalsOperator,fieldName=UpdateDate,format=2006-01-02"`
     Subquery sub `soql:"subquery"`
 }
 
@@ -616,6 +617,19 @@ type sub struct {
 If there are more than one fields in the struct tagged with `whereClause` then they will be combined using `AND` logical operator. This has been demonstrated in the code snippets in [Advanced usage](#advanced-usage).
 
 1. `subquery`: This tag is used on members which should be used to construct related sets of conditions wrapped in `()` in the query. This tag should only be used on members of type `struct`. Used on any other type, `ErrInvalidTag` error will be returned. Any of the above property tags (including `subquery`) may be used in the designated `struct`.
+
+The following tag can be included for modifying the marshalling behavior:
+
+1. `format`: This tag can be included to specify the formatting of `time.Time` and `*time.Time` fields when marshalled to a
+query. If omitted, the default format "2006-01-02T15:04:05.000-0700" is used. A format of "2006-01-02" can be used when
+forming a soql query against a Date type.
+
+   ```
+   whereClause, _ := MarshalWehereClause(QueryCriteria{
+       UpdateDate: time.Date(2009, 11, 17, 20, 34, 58, 651387237, time.UTC),
+   })
+   // whereClause will be: WHERE UpdateDate = 2009-11-17
+   ```
 
 #### The Order struct and orderByClause
 

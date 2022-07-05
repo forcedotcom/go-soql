@@ -73,8 +73,8 @@ const (
 	ascKeyword                      = " ASC"
 	descKeyword                     = " DESC"
 
-	// DateFormat is the golang reference time in the soql dateTime fields format
-	DateFormat = "2006-01-02T15:04:05.000-0700"
+	// DateTimeFormat is the golang reference time in the soql dateTime fields format
+	DateTimeFormat = "2006-01-02T15:04:05.000-0700"
 
 	// SoqlTag is the main tag name to be used to mark a struct field to be considered for soql marshaling
 	SoqlTag = "soql"
@@ -93,6 +93,8 @@ const (
 	WhereClause = "whereClause"
 	// Joiner is the parameter to be used to specify the joiner to use between properties within a where clause
 	Joiner = "joiner"
+	// Format is the parameter to be used to specify string formatting, it is only valid for time.Time fields
+	Format = "format"
 	// OrderByClause is the tag to be used when marking the string slice to be considered for order by clause
 	OrderByClause = "orderByClause"
 	// LimitClause is the tag to be used when marking the int to be considered for limit clause
@@ -146,7 +148,7 @@ const (
 	Subquery = "subquery"
 )
 
-var clauseBuilderMap = map[string]func(v interface{}, fieldName string) (string, error){
+var clauseBuilderMap = map[string]func(v interface{}, fieldName string, tags map[string]string) (string, error){
 	LikeOperator:                    buildLikeClause,
 	NotLikeOperator:                 buildNotLikeClause,
 	InOperator:                      buildInClause,
@@ -243,11 +245,11 @@ var sanitizeLikeCharacters = append(
 
 var sanitizeLikeReplacer = strings.NewReplacer(sanitizeLikeCharacters...)
 
-func buildLikeClause(v interface{}, fieldName string) (string, error) {
+func buildLikeClause(v interface{}, fieldName string, tags map[string]string) (string, error) {
 	return constructLikeClause(v, fieldName, false)
 }
 
-func buildNotLikeClause(v interface{}, fieldName string) (string, error) {
+func buildNotLikeClause(v interface{}, fieldName string, tags map[string]string) (string, error) {
 	return constructLikeClause(v, fieldName, true)
 }
 
@@ -286,15 +288,15 @@ func constructLikeClause(v interface{}, fieldName string, exclude bool) (string,
 	return buff.String(), nil
 }
 
-func buildInClause(v interface{}, fieldName string) (string, error) {
-	return constructContainsClause(v, fieldName, inOperator)
+func buildInClause(v interface{}, fieldName string, tags map[string]string) (string, error) {
+	return constructContainsClause(v, fieldName, inOperator, tags)
 }
 
-func buildNotInClause(v interface{}, fieldName string) (string, error) {
-	return constructContainsClause(v, fieldName, notInOperator)
+func buildNotInClause(v interface{}, fieldName string, tags map[string]string) (string, error) {
+	return constructContainsClause(v, fieldName, notInOperator, tags)
 }
 
-func constructContainsClause(v interface{}, fieldName string, operator string) (string, error) {
+func constructContainsClause(v interface{}, fieldName string, operator string, tags map[string]string) (string, error) {
 	var buff strings.Builder
 	var items []string
 	useSingleQuotes := false
@@ -307,7 +309,7 @@ func constructContainsClause(v interface{}, fieldName string, operator string) (
 		items = strings.Fields(strings.Trim(fmt.Sprint(u), "[]"))
 	case []time.Time:
 		for _, item := range u {
-			items = append(items, item.Format(DateFormat))
+			items = append(items, item.Format(getDateFormat(tags)))
 		}
 	default:
 		return buff.String(), ErrInvalidTag
@@ -336,31 +338,31 @@ func constructContainsClause(v interface{}, fieldName string, operator string) (
 	return buff.String(), nil
 }
 
-func buildNotEqualsClause(v interface{}, fieldName string) (string, error) {
-	return constructComparisonClause(v, fieldName, notEqualsOperator)
+func buildNotEqualsClause(v interface{}, fieldName string, tags map[string]string) (string, error) {
+	return constructComparisonClause(v, fieldName, notEqualsOperator, tags)
 }
 
-func buildEqualsClause(v interface{}, fieldName string) (string, error) {
-	return constructComparisonClause(v, fieldName, equalsOperator)
+func buildEqualsClause(v interface{}, fieldName string, tags map[string]string) (string, error) {
+	return constructComparisonClause(v, fieldName, equalsOperator, tags)
 }
 
-func buildGreaterThanClause(v interface{}, fieldName string) (string, error) {
-	return constructComparisonClause(v, fieldName, greaterThanOperator)
+func buildGreaterThanClause(v interface{}, fieldName string, tags map[string]string) (string, error) {
+	return constructComparisonClause(v, fieldName, greaterThanOperator, tags)
 }
 
-func buildGreaterThanOrEqualsToClause(v interface{}, fieldName string) (string, error) {
-	return constructComparisonClause(v, fieldName, greaterThanOrEqualsToOperator)
+func buildGreaterThanOrEqualsToClause(v interface{}, fieldName string, tags map[string]string) (string, error) {
+	return constructComparisonClause(v, fieldName, greaterThanOrEqualsToOperator, tags)
 }
 
-func buildLessThanClause(v interface{}, fieldName string) (string, error) {
-	return constructComparisonClause(v, fieldName, lessThanOperator)
+func buildLessThanClause(v interface{}, fieldName string, tags map[string]string) (string, error) {
+	return constructComparisonClause(v, fieldName, lessThanOperator, tags)
 }
 
-func buildLessThanOrEqualsToClause(v interface{}, fieldName string) (string, error) {
-	return constructComparisonClause(v, fieldName, lessThanOrEqualsToOperator)
+func buildLessThanOrEqualsToClause(v interface{}, fieldName string, tags map[string]string) (string, error) {
+	return constructComparisonClause(v, fieldName, lessThanOrEqualsToOperator, tags)
 }
 
-func constructComparisonClause(v interface{}, fieldName, operator string) (string, error) {
+func constructComparisonClause(v interface{}, fieldName, operator string, tags map[string]string) (string, error) {
 	var buff strings.Builder
 	var value string
 	useSingleQuotes := false
@@ -372,14 +374,14 @@ func constructComparisonClause(v interface{}, fieldName, operator string) (strin
 	case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64, float32, float64, bool:
 		value = fmt.Sprint(u)
 	case time.Time:
-		value = u.Format(DateFormat)
+		value = u.Format(getDateFormat(tags))
 	case *int, *int8, *int16, *int32, *int64, *uint, *uint8, *uint16, *uint32, *uint64, *float32, *float64, *bool:
 		if !reflect.ValueOf(u).IsNil() {
 			value = fmt.Sprint(reflect.Indirect(reflect.ValueOf(u)))
 		}
 	case *time.Time:
 		if !reflect.ValueOf(u).IsNil() {
-			value = reflect.Indirect(reflect.ValueOf(u)).Interface().(time.Time).Format(DateFormat)
+			value = reflect.Indirect(reflect.ValueOf(u)).Interface().(time.Time).Format(getDateFormat(tags))
 		}
 	default:
 		return buff.String(), ErrInvalidTag
@@ -399,44 +401,43 @@ func constructComparisonClause(v interface{}, fieldName, operator string) (strin
 	return buff.String(), nil
 }
 
-func buildGreaterNextNDaysOperator(v interface{}, fieldName string) (string, error) {
+func buildGreaterNextNDaysOperator(v interface{}, fieldName string, tags map[string]string) (string, error) {
 	return constructDateLiteralsClause(v, fieldName, greaterNextNDaysOperator)
 }
 
-func buildGreaterOrEqualNextNDaysOperator(v interface{}, fieldName string) (string, error) {
+func buildGreaterOrEqualNextNDaysOperator(v interface{}, fieldName string, tags map[string]string) (string, error) {
 	return constructDateLiteralsClause(v, fieldName, greaterOrEqualNextNDaysOperator)
 }
 
-func buildEqualsNextNDaysOperator(v interface{}, fieldName string) (string, error) {
+func buildEqualsNextNDaysOperator(v interface{}, fieldName string, tags map[string]string) (string, error) {
 	return constructDateLiteralsClause(v, fieldName, equalsNextNDaysOperator)
 }
 
-func buildLessNextNDaysOperator(v interface{}, fieldName string) (string, error) {
+func buildLessNextNDaysOperator(v interface{}, fieldName string, tags map[string]string) (string, error) {
 	return constructDateLiteralsClause(v, fieldName, lessNextNDaysOperator)
 }
 
-func buildLessOrEqualNextNDaysOperator(v interface{}, fieldName string) (string, error) {
-	return constructComparisonClause(v, fieldName, lessOrEqualNextNDaysOperator)
-
+func buildLessOrEqualNextNDaysOperator(v interface{}, fieldName string, tags map[string]string) (string, error) {
+	return constructComparisonClause(v, fieldName, lessOrEqualNextNDaysOperator, tags)
 }
 
-func buildGreaterLastNDaysOperator(v interface{}, fieldName string) (string, error) {
+func buildGreaterLastNDaysOperator(v interface{}, fieldName string, tags map[string]string) (string, error) {
 	return constructDateLiteralsClause(v, fieldName, greaterLastNDaysOperator)
 }
 
-func buildGreaterOrEqualLastNDaysOperator(v interface{}, fieldName string) (string, error) {
+func buildGreaterOrEqualLastNDaysOperator(v interface{}, fieldName string, tags map[string]string) (string, error) {
 	return constructDateLiteralsClause(v, fieldName, greaterOrEqualLastNDaysOperator)
 }
 
-func buildEqualsLastNDaysOperator(v interface{}, fieldName string) (string, error) {
+func buildEqualsLastNDaysOperator(v interface{}, fieldName string, tags map[string]string) (string, error) {
 	return constructDateLiteralsClause(v, fieldName, equalsLastNDaysOperator)
 }
 
-func buildLessLastNDaysOperator(v interface{}, fieldName string) (string, error) {
+func buildLessLastNDaysOperator(v interface{}, fieldName string, tags map[string]string) (string, error) {
 	return constructDateLiteralsClause(v, fieldName, lessLastNDaysOperator)
 }
 
-func buildLessOrEqualLastNDaysOperator(v interface{}, fieldName string) (string, error) {
+func buildLessOrEqualLastNDaysOperator(v interface{}, fieldName string, tags map[string]string) (string, error) {
 	return constructDateLiteralsClause(v, fieldName, lessOrEqualLastNDaysOperator)
 }
 
@@ -463,7 +464,7 @@ func constructDateLiteralsClause(v interface{}, fieldName string, operator strin
 	return buff.String(), nil
 }
 
-func buildNullClause(v interface{}, fieldName string) (string, error) {
+func buildNullClause(v interface{}, fieldName string, tags map[string]string) (string, error) {
 	reflectedValue, _, err := getReflectedValueAndType(v)
 	if err == ErrNilValue {
 		// Not an error case because nil value for *bool is valid
@@ -740,7 +741,7 @@ func marshalWhereClause(v interface{}, tableName, joiner string) (string, error)
 			if tableName != "" {
 				columnName = tableName + period + fieldName
 			}
-			partialClause, err = fn(field.Interface(), columnName)
+			partialClause, err = fn(field.Interface(), columnName, getTagParameterMap(clauseTag))
 			if err != nil {
 				return "", err
 			}
@@ -820,19 +821,43 @@ func getJoiner(clauseTag string) (string, error) {
 	}
 }
 
-func getTagValue(clauseTag, key, defaultValue string) string {
+func parseTagString(tagString string) (string, string) {
+	delimInd := strings.Index(tagString, "=")
+	if delimInd == -1 {
+		return tagString, ""
+	}
+	return tagString[:delimInd], tagString[delimInd+1:]
+}
+
+func getTagParameterMap(clauseTag string) map[string]string {
+	tagMap := make(map[string]string)
 	tagItems := strings.Split(clauseTag, ",")
-	value := defaultValue
 	for _, tagItem := range tagItems {
-		indx := strings.Index(tagItem, "=")
-		if indx == -1 {
+		tagKey, tagValue := parseTagString(tagItem)
+		if tagKey == "" {
 			continue
 		}
-		if tagItem[0:indx] == key {
-			value = tagItem[indx+1:]
+		tagMap[tagKey] = tagValue
+	}
+	return tagMap
+}
+
+func getDateFormat(tags map[string]string) string {
+	if customFormat, ok := tags[Format]; ok {
+		return customFormat
+	}
+	return DateTimeFormat
+}
+
+func getTagValue(clauseTag, key, defaultValue string) string {
+	tagItems := strings.Split(clauseTag, ",")
+	for _, tagItem := range tagItems {
+		tagKey, tagValue := parseTagString(tagItem)
+		if tagKey == key {
+			return tagValue
 		}
 	}
-	return value
+	return defaultValue
 }
 
 func getFieldName(clauseTag, defaultFieldName string) string {
