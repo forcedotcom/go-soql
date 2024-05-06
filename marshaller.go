@@ -85,6 +85,8 @@ const (
 	TableName = "tableName"
 	// SelectColumn is the tag to be used for selecting a column in select clause
 	SelectColumn = "selectColumn"
+	// SelectSingle is the tag to be used for selecting a column in select clause without breaking a struct
+	SelectOpaque = "selectOpaque"
 	// SelectChild is the tag to be used when selecting from child tables
 	SelectChild = "selectChild"
 	// FieldName is the parameter to be used to specify the name of the field in underlying SOQL object
@@ -511,7 +513,8 @@ func mapSelectColumns(mappings map[string]string, parent string, gusParent strin
 			continue
 		}
 		// skip all fields that are not tagged as selectColumn
-		if getClauseKey(tag) != SelectColumn {
+		clauseKey := getClauseKey(tag)
+		if clauseKey != SelectColumn && clauseKey != SelectOpaque {
 			continue
 		}
 
@@ -947,9 +950,13 @@ func MarshalSelectClause(v interface{}, relationShipName string) (string, error)
 			}
 			clauseKey := getClauseKey(clauseTag)
 			isChildRelation := false
+			breakStructs := true
 			switch clauseKey {
 			case SelectColumn:
 				isChildRelation = false
+			case SelectOpaque:
+				isChildRelation = false
+				breakStructs = false
 			case SelectChild:
 				isChildRelation = true
 			default:
@@ -966,7 +973,7 @@ func MarshalSelectClause(v interface{}, relationShipName string) (string, error)
 				}
 				buff.WriteString(subStr)
 			} else {
-				if field.Type.Kind() == reflect.Struct {
+				if field.Type.Kind() == reflect.Struct && breakStructs {
 					v := reflect.New(field.Type)
 					subStr, err := MarshalSelectClause(v.Elem().Interface(), prefix+fieldName)
 					if err != nil {
