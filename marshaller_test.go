@@ -1026,6 +1026,17 @@ var _ = Describe("Marshaller", func() {
 					Expect(clause).To(Equal("Major_OS_Version__c DESC,Num_of_CPU_Cores__c ASC,Physical_CPU_Count__c DESC,Last_Restart__c ASC"))
 				})
 			})
+
+			Context("when an Order slice referring to a SelectOpaque field is passed", func() {
+				It("returns a valid order clause", func() {
+					col1 := Order{Field: "OpaqueField", IsDesc: true}
+					clause, err := MarshalOrderByClause([]Order{col1}, struct {
+						OpaqueField OpaqueStructSoql `soql:"selectOpaque,fieldName=Role__c"`
+					}{})
+					Expect(err).ToNot(HaveOccurred())
+					Expect(clause).To(Equal("Role__c DESC"))
+				})
+			})
 		})
 
 		Context("when invalid order by is passed as argument", func() {
@@ -1094,6 +1105,22 @@ var _ = Describe("Marshaller", func() {
 						str, err := MarshalSelectClause(NestedStruct{}, "")
 						Expect(err).ToNot(HaveOccurred())
 						Expect(str).To(Equal("Id,Name__c,NonNestedStruct__r.Name,NonNestedStruct__r.SomeValue__c"))
+					})
+				})
+
+				Context("when nested struct with soql fields is selected opaquely", func() {
+					It("returns properly resolved list of field names without breaking up dontbreak", func() {
+						str, err := MarshalSelectClause(NestedStructWithOpaqueSoql{}, "")
+						Expect(err).ToNot(HaveOccurred())
+						Expect(str).To(Equal("Id,Name__c,DontBreak__c"))
+					})
+				})
+
+				Context("when nested struct with no soql fields is selected opaquely", func() {
+					It("returns properly resolved list of field names without breaking up nobreak", func() {
+						str, err := MarshalSelectClause(NestedStructWithOpaqueNonSoql{}, "")
+						Expect(err).ToNot(HaveOccurred())
+						Expect(str).To(Equal("Id,Name__c,DontBreak__c"))
 					})
 				})
 			})

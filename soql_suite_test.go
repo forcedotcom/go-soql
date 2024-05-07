@@ -58,6 +58,26 @@ type NestedStruct struct {
 	NonNestedStruct NonNestedStruct `soql:"selectColumn,fieldName=NonNestedStruct__r"`
 }
 
+type OpaqueStructSoql struct {
+	Role string `soql:"selectColumn,fieldName=Role"`
+}
+
+type OpaqueStructNonSoql struct {
+	Role string
+}
+
+type NestedStructWithOpaqueSoql struct {
+	ID        string           `soql:"selectColumn,fieldName=Id"`
+	Name      string           `soql:"selectColumn,fieldName=Name__c"`
+	DontBreak OpaqueStructSoql `soql:"selectOpaque,fieldName=DontBreak__c"`
+}
+
+type NestedStructWithOpaqueNonSoql struct {
+	ID        string              `soql:"selectColumn,fieldName=Id"`
+	Name      string              `soql:"selectColumn,fieldName=Name__c"`
+	DontBreak OpaqueStructNonSoql `soql:"selectOpaque,fieldName=DontBreak__c"`
+}
+
 type TestChildStruct struct {
 	SelectClause ChildStruct        `soql:"selectClause,tableName=SM_Application_Versions__c"`
 	WhereClause  ChildQueryCriteria `soql:"whereClause"`
